@@ -1,0 +1,2048 @@
+---
+title: "Quad and Hami SR results"
+author: "Mick Girdwood"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
+
+black <- "#000000"
+orange <- "#E69F00"
+lightblue <- "#56B4E9"
+green <- "#009E73"
+yellow <- "#F0E442"
+blue <- "#0072B2"
+red <- "#D55E00"
+pink <- "#CC79A7"
+
+library(tidyverse)
+
+within_data <- read_csv("data/processed/within_data.csv") %>%
+  filter(!study %in% c("Geoghegan 2007", "Karanikas 2004", "Karanikas 2005", "Nicholas 2001",
+                       "Urabe 2002", "Tate 2017", "Dalton 2011", "Hall 2015", "Noehren 2014", "Rahova 2020",
+                       "Thomas 2013", "Balki 2019", "Rhatomy 2019", "Sullivan 2022"))
+
+# filtering studies that were included in hip review (where no limit on publication year), but need to remove forthis review
+casecontrol <- read_csv("data/processed/casecontrol.csv") %>%
+  filter(!study %in% c("Geoghegan 2007", "Karanikas 2004", "Karanikas 2005", "Nicholas 2001",
+                       "Urabe 2002", "Tate 2017", "Dalton 2011", "Hall 2015", "Noehren 2014", "Rahova 2020",
+                       "Thomas 2013", "Balki 2019", "Rhatomy 2019", "Sullivan 2022"))
+
+
+## Functions:
+
+
+pointsfunction <- function(data){
+  data %>%
+    select(ci.ub, x) %>% 
+    bind_rows(., data %>% 
+                select(ci.lb, x) %>% 
+                rename(ci.ub = ci.lb) %>% 
+                arrange(desc(x)))
+}
+
+pi_pointsfunction <- function(data){
+  data %>%
+    select(pi.ub, x) %>% 
+    bind_rows(., data %>% 
+                select(pi.lb, x) %>% 
+                rename(pi.ub = pi.lb) %>% 
+                arrange(desc(x)))
+}
+
+####
+## Function to help model selection
+mod_selection <- function(model) {
+  results <- list() # create empty list
+  plots <- list()
+  
+  data <- model$data # get data from model
+  timepoint <- sort(data$timepoint_mean) # get the timepoint information
+  
+  
+  # list of different moderator calls
+  calls <- list("~timepoint_mean", 
+                "~log(timepoint_mean)", 
+                "~poly(timepoint_mean, degree = 2, raw = TRUE)", 
+                "~rcs(timepoint_mean, 3)",  
+                "~rcs(timepoint_mean, 4)"
+  )
+  
+  for (i in calls) { # for each possible moderator format fit the model
+    model_res <- update(model, as.formula(i)) # take the input model and add the relevant moderator
+    fit_stats <- fitstats(model_res) # provide  fitstats
+    results[[i]] <- fit_stats # add to list
+    plots[[i]] <- mv_plotfunction(model_res)
+  }
+  
+  results <- results %>%
+    map_df(~ data.frame(t(.), row.names = NULL), .id = "mod") %>% # convert list to a dataframe 
+    mutate(mod = c("Linear", "Log", "Poly (2)", "3 knot RCS", "4 knot RCS"), .before = 1)
+  
+  allplots <- ggarrange(plots[[1]], plots[[2]], plots[[3]], plots[[4]], plots[[5]], nrow = 2, ncol = 3, legend = "none")
+  
+  #return(results)
+  return(list(results, allplots))
+}
+
+
+####
+## Function for plotting mv object
+
+
+mv_plotfunction <- function(model, logscale = FALSE){
+  
+  knot_pos <- NULL # set to 0 for logic to work later
+  
+  moderator <- as.character(model$call$mods[2]) # get the moderator variable
+  data <- model$data # get the data
+  
+  last_timepoint <- round(max(data$timepoint_mean),0)
+  
+  total_k  <- model$k
+  total_studies <- data %>% filter(!is.na(vi)) %>% summarise(n = length(unique(study))) %>% as.numeric()
+  total_n <- data %>% distinct(cohort, .keep_all = TRUE)  %>% filter(!is.na(vi)) %>% summarise(n = sum(acl_n)) %>% as.numeric
+    
+    sum(data$acl_n[!is.na(data$vi)])
+  
+  if (str_detect(moderator, "rcs")) { # if a rcs is used, extract the information
+    spline <- as.list(model$formula.mods[[2]][[3]]) 
+    knot_pos <- unlist(spline[sapply(spline, is.numeric)]) # this gets the vector of knot positions or no. of knots
+  }
+  
+  # depending on the type od moderator (i.e. log, linear, rcs...) calculate the predicted curve points
+  mod_type <- if (str_detect(moderator, "log")) {
+    
+    #log
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = log(seq(1,100, length = 100)),
+                                 transf = exp
+                                 )) %>% mutate(x = row_number())
+    
+  } else if (str_detect(moderator, "poly")) {
+    
+    # poly
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=unname(poly(seq(1,100, length = 100), degree = 2, raw=TRUE)),
+                                 transf = exp
+                                 )) %>% mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 3) {
+    
+    # 3 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,100, length = 100), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 1) { # i.e. cases where only the number of knots is given
+    
+    # 3 knot rcs
+    knots <- attr(rcs(data$timepoint_mean, as.numeric(knot_pos)), "parms") # use model data to get knot positions
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,100, length = 100), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 4) {
+    
+    # 4 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,100, length = 100), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else {
+    # Linear
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = seq(1,100, length = 100),
+                                 transf = exp)) %>% mutate(x = row_number())
+  }
+  
+  # calculate ci points
+  ci <-  pointsfunction(points)
+  
+  ci <- ci %>% filter(x < last_timepoint + 6)
+  points <- points %>% filter(x < last_timepoint + 6)
+  
+  
+  if (logscale == FALSE){
+    
+    # plot data and predicted model
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort)) +
+      geom_point(aes(size = acl_n), alpha = 0.3) + 
+      geom_line(alpha = 0.8) + 
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+      coord_cartesian(xlim = c(0,100), ylim = c(0.5, 1.2)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Months)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.1, inherit.aes = FALSE) +
+      annotate(geom = "text", x = 100, y = 0.5, label = paste0("k = ", total_k, " (", total_studies, " studies)"), family = "Karla", hjust = 1) +
+      annotate(geom = "text", x = 100, y = 0.55, label = paste0("n = ", total_n), family = "Karla", hjust = 1) +
+      theme_mgpub()
+    
+  } else {
+    
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort)) +
+      geom_point(aes(size = acl_n), alpha = 0.3) + 
+      geom_line(alpha = 0.8) + 
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      scale_x_continuous(trans = 'log10', limits = c(2,150)) +
+      #coord_cartesian(xlim = c(0,100), ylim = c(-0.75, 0.25)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Months)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.1, inherit.aes = FALSE) +
+      theme_mgpub()
+    
+  }
+  
+  return(plot)
+  
+}
+
+
+# This function returns some information around the predicted fit of the model 
+# Estimates at 1, 2 and 5 years
+# Last Data point
+# zero_crossing point
+
+predict_details <- function(model) {
+  
+  knot_pos <- NULL # set to 0 for logic to work later
+  
+  moderator <- as.character(model$call$mods[2]) # get the moderator variable
+  data <- model$data # get the data
+  
+  total_k <- length(!is.na(data$vi))
+  total_studies <- as.numeric(data %>% filter(!is.na(vi)) %>% summarise(length(unique(cohort))))
+  total_n <- sum(data$acl_n[!is.na(data$vi)])
+  
+  if (str_detect(moderator, "rcs")) { # if a rcs is used, extract the information
+    spline <- as.list(model$formula.mods[[2]][[3]]) 
+    knot_pos <- unlist(spline[sapply(spline, is.numeric)]) # this gets the vector of knot positions or no. of knots
+  }
+  # depending on the type od moderator (i.e. log, linear, rcs...) calculate the predicted curve points
+  mod_type <- if (str_detect(moderator, "log")) {
+    
+    #log
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = log(seq(1,120, length = 120)),
+                                 transf = exp
+    )) %>% mutate(x = row_number())
+    
+  } else if (str_detect(moderator, "poly")) {
+    
+    # poly
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=unname(poly(seq(1,120, length = 120), degree = 2, raw=TRUE)),
+                                 transf = exp
+    )) %>% mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 3) {
+    
+    # 3 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 1) { # i.e. cases where only the number of knots is given
+    
+    # 3 knot rcs
+    knots <- attr(rcs(data$timepoint_mean, as.numeric(knot_pos)), "parms") # use model data to get knot positions
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 4) {
+    
+    # 4 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else {
+    # Linear
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = seq(1,120, length = 120),
+                                 transf = exp)) %>% mutate(x = row_number())
+  }
+  
+  
+  cutpoints <- points %>%
+    filter(x %in% c(12, 24, 60)) %>% # get the specific timepoint data
+    select(pred, ci.lb, ci.ub) %>%
+    mutate(across(where(is.numeric), ~round(.x*100, 1))) %>% # transform to percentage
+    mutate(timepoint = c("1 year", "2 years", "5 years"), .before = 1) %>%
+    mutate(new = paste0(pred, " (", ci.lb, " to ", ci.ub, ")")) %>% 
+    select(timepoint, new) %>% 
+    pivot_wider(names_from = timepoint, values_from = new) 
+  
+  logpoints <- points %>% # need to transform back to logscale to be able to use zero_crossings function
+    mutate(across(where(is.numeric), ~log(.)))
+  
+  lastdata <- round(max(data$timepoint_mean)/12,1) # get the highest timepoint in fitted data
+  plotlastdata <- lastdata + 6 # add 5 months to this for predicted fit purposes
+  
+  lastpoints <- logpoints %>% filter(x < plotlastdata + 1) # filter predicted data based on this
+  
+  zerocrossing <- round(modelbased::zero_crossings(lastpoints$ci.ub)[1]/12,1) # get the zerocrossing point
+  
+  if (!is.na(zerocrossing)) { 
+    zerocrossing <- paste0(zerocrossing, " years") # Add months string if not NA
+  }
+  
+  table <- cutpoints %>% 
+    bind_cols('Zero crossing' = zerocrossing) %>% 
+    bind_cols('Last Data Point' = paste0(lastdata, " years"))
+  
+  return(table)
+  
+}
+
+
+mv_plotdetails <- function(model, logscale = FALSE, xlimit = 120, include_pi = FALSE, showgraft = NULL, linerange = FALSE){
+  
+  knot_pos <- NULL # set to 0 for logic to work later
+  
+  moderator <- as.character(model$call$mods[2]) # get the moderator variable
+  data <- model$data # get the data
+  
+  
+  total_k  <- model$k
+  total_studies <- data %>% filter(!is.na(vi)) %>% summarise(n = length(unique(study))) %>% as.numeric()
+  total_n <- data %>% group_by(study) %>% arrange(timepoint) %>% slice(1) %>% ungroup()  %>% filter(!is.na(vi)) %>% summarise(n = sum(acl_n)) %>% as.numeric
+  
+  last_timepoint <- round(max(data$timepoint_mean),0)
+  
+  data <- data %>%
+    mutate(hsgraft = case_when(
+      acl_graft_group == "hs" ~ "hs",
+      TRUE ~ "other"
+    ),
+    quadgraft = case_when(
+      acl_graft_group == "quad" ~ "quad",
+      TRUE ~ "other"
+    ))
+
+  
+  if (str_detect(moderator, "rcs")) { # if a rcs is used, extract the information
+    spline <- as.list(model$formula.mods[[2]][[3]]) 
+    knot_pos <- unlist(spline[sapply(spline, is.numeric)]) # this gets the vector of knot positions or no. of knots
+  }
+  
+  # depending on the type od moderator (i.e. log, linear, rcs...) calculate the predicted curve points
+  mod_type <- if (str_detect(moderator, "log")) {
+    
+    #log
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = log(seq(1,120, length = 120)),
+                                 transf = exp
+    )) %>% mutate(x = row_number())
+    
+  } else if (str_detect(moderator, "poly")) {
+    
+    # poly
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=unname(poly(seq(1,120, length = 120), degree = 2, raw=TRUE)),
+                                 transf = exp
+    )) %>% mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 3) {
+    
+    # 3 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 1) { # i.e. cases where only the number of knots is given
+    
+    # 3 knot rcs
+    knots <- attr(rcs(data$timepoint_mean, as.numeric(knot_pos)), "parms") # use model data to get knot positions
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else if (length(knot_pos) == 4) {
+    
+    # 4 knot rcs
+    knots <- attr(rcs(model.matrix(model)[,2], knot_pos), "parms")
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods=rcspline.eval(seq(1,120, length = 120), knots, inclx=TRUE),
+                                 transf = exp)) %>% 
+      mutate(x = row_number())
+    
+  } else {
+    # Linear
+    points <- data.frame(predict(robust(model, cluster = cohort, clubSandwich = TRUE), 
+                                 newmods = seq(1,120, length = 120),
+                                 transf = exp)) %>% mutate(x = row_number())
+  }
+  
+  # calculate ci points
+  ci <-  pointsfunction(points)
+  pi <-  pi_pointsfunction(points)
+  
+  
+  ci <- ci %>% filter(x < last_timepoint + 6)
+  points <- points %>% filter(x < last_timepoint + 6)
+  pi <- pi %>% filter(x < last_timepoint + 6)
+  
+  if (logscale == FALSE & is.null(showgraft) & linerange == FALSE){
+    
+    # plot data and predicted model
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort)) +
+      geom_hline(yintercept = 1, colour = "dark grey") +
+      geom_line(alpha = 0.8, colour = "grey") + 
+      geom_point(aes(size = acl_n), alpha = 0.3) + 
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+      scale_x_continuous(breaks = c(0, 12, 24, 60, 120), labels = c(0, 1, 2, 5, 10)) +
+      #scale_x_continuous(breaks = c(0, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120), labels = c("", 1, 2, "", "", 5, "", "", "", "", 10)) +
+      coord_cartesian(xlim = c(0, xlimit), ylim = c(0.5, 1.2)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Years)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.2, inherit.aes = FALSE) +
+      annotate(geom = "text", x = 120, y = 0.5, label = paste0("k = ", total_k, " (", total_studies, " studies)"), family = "Karla", hjust = 1) +
+      annotate(geom = "text", x = 120, y = 0.55, label = paste0("n = ", total_n), family = "Karla", hjust = 1) +
+      theme_mgpub() +
+      theme(panel.grid.major.x = element_line(linewidth = rel(0.5), linetype = 2))
+    
+  } else if (linerange == TRUE) {
+    
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort)) +
+      geom_point(alpha = 0.3) + 
+      geom_linerange(data = data, mapping = aes(x = timepoint_mean, ymin = ci.lb, ymax = ci.ub), alpha = 0.3,  inherit.aes = FALSE) +
+      geom_line(alpha = 0.1, linewidth = 3) + 
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+      coord_cartesian(xlim = c(0,100), ylim = c(0.5, 1.2)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Months)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.1, inherit.aes = FALSE) +
+      theme_mgpub()
+    
+  } else if (showgraft == "quad"){
+    
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort, colour = quadgraft)) +
+      geom_point(aes(size = acl_n, colour = quadgraft), alpha = 0.3) + 
+      scale_fill_manual(values = c("red", "blue")) + 
+      geom_line(alpha = 0.8) + 
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+      coord_cartesian(xlim = c(0,xlimit), ylim = c(0.5, 1.2)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Months)", y = "Percentage Deficit", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "black", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "black",  alpha = 0.1, inherit.aes = FALSE) +
+      theme_mgpub()
+    
+  } else if (showgraft == "hs"){
+    
+    plot <- data %>%
+      ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort, colour = hsgraft)) +
+      geom_point(aes(size = acl_n, colour = hsgraft), alpha = 0.3) + 
+      geom_line(alpha = 0.8) + 
+      scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+      #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+      #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+      coord_cartesian(xlim = c(0,xlimit), ylim = c(0.5, 1.2)) +
+      scale_size(range = c(0, 10)) +
+      labs(x = "Time since surgery (Months)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+      #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+      #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+      geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+      geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.1, inherit.aes = FALSE) +
+      theme_mgpub()
+    
+  } else {
+      
+      plot <- data %>%
+        ggplot(aes(x = timepoint_mean, y = exp(yi), group = cohort)) +
+        geom_hline(yintercept = 1, colour = "dark grey") +
+        geom_line(alpha = 0.8, colour = "grey") + 
+        geom_point(aes(size = acl_n), alpha = 0.3) + 
+        scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+        #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+        scale_x_continuous(trans = 'log10', limits = c(2,150), breaks = c(3, 12, 36, 120), labels = c(0.25, 1, 3, 10)) +
+        #coord_cartesian(xlim = c(0,100), ylim = c(-0.75, 0.25)) +
+        scale_size(range = c(0, 10)) +
+        labs(x = "Time since surgery (Years)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+        #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+        #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+        geom_line(data = points, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+        geom_polygon(data = ci, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.2, inherit.aes = FALSE) +
+        theme_mgpub()
+      
+  } 
+  
+  if (include_pi == TRUE) {
+    plot <- plot +
+      geom_polygon(data = pi, aes(x = x, y = pi.ub), fill = "black",  alpha = 0.06, inherit.aes = FALSE)
+  }
+  
+  return(plot)
+  
+}
+
+## Function conducts regression of the true effects for within and between person analysis and 
+## Plots the result
+## Input is a bivariate rma.mv model 
+
+corplot_function <- function(model){
+  data <- model$data
+  coef <- exp(coef(model))
+  
+  data2 <- model$data %>%
+    select(study, yi, vi, type) %>%
+    pivot_wider(id_cols = study, names_from = type,
+                values_from = c(yi, vi), 
+                names_glue = "{.value}_{type}") %>%
+    mutate(covar = vector("list", length = nrow(.)))
+  
+  data2$covar <- blsplit(model$V, cluster = data$cohort)
+  
+  
+  data2 <- data2 %>%
+    mutate(covar2 = map(covar, list_to_matrix)) %>%
+    rowwise() %>%
+    mutate(centre = list(c(exp(yi_casecontrol), exp(yi_within)))) %>%
+    ungroup() %>%
+    mutate(ell = map2(.x = covar, .y = centre, ~ellipse(matrix(unlist(.x), nrow = 2), centre = unlist(.y)))) %>%
+    ungroup() %>%
+    mutate(ellx = map(ell, as.data.frame)) %>%
+    unnest(ellx)
+  
+  
+  reg <- matreg(y = 2, x = 1, R = model$G, cov = TRUE, means = coef, V = model$vvc)
+  ci <- as.data.frame(ellipse(model$vb, centre = coef, level = 0.95)) %>% rename(x = 1, y = 2)
+  pred <- as.data.frame(ellipse(model$G, centre = coef, level = 0.95)) %>% rename(x = 1, y = 2)
+  
+  plot <- data %>% 
+    select(study, type, measure_2, yi, vi) %>% # select only the estimates
+    pivot_longer(-c(study, type, measure_2), names_to = "var", values_to = "val") %>%
+    pivot_wider(id_cols = c(study, measure_2), names_from = c(type, "var"), values_from = "val") %>%
+    ggplot(aes(x = exp(casecontrol_yi), y = exp(within_yi))) +
+    geom_abline(intercept = 0, slope = 1, colour = "grey") +
+    geom_abline(intercept = 0.25, slope = 0.75, linetype = "dotted", colour = "grey") +
+    geom_abline(intercept = 0.5, slope = 0.5, linetype = "dotted", colour = "grey", alpha = 0.7) +
+    geom_vline(xintercept = 1, colour = "grey") + 
+    geom_hline(yintercept = 1, colour = "grey") +
+    geom_point() +
+    geom_polygon(data = data2, aes(x = x, y = y, group = study), inherit.aes = FALSE, alpha = 0.07) +
+    geom_abline(intercept = reg$tab$beta[1], slope = reg$tab$beta[2], colour = "red", linewidth = 1) +
+    #geom_point(x = coef[1], y = coef[2], inherit.aes = FALSE, colour = "red", size = 3) +
+    #geom_polygon(data = ci, mapping = aes(x = x, y = y), alpha = 0.15, inherit.aes = FALSE, fill = "red") +
+    #geom_polygon(data = pred, mapping = aes(x = x, y = y), alpha = 0.15, inherit.aes = FALSE) +
+    coord_cartesian(xlim = c(0.4, 1.15), ylim = c(0.4, 1.15), clip = "off") +
+    scale_x_continuous(breaks = c(0.5, 0.75, 1.0), labels = c("50%", "25%", "0%")) +
+    scale_y_continuous(breaks = c(0.5, 0.75, 1.0), labels = c("50%", "25%", "0%")) +
+      annotate(geom = "text", x = 0.4, y = 0.4, label = "1x", family = "Karla", colour = "grey", vjust = 0, angle = 45) + 
+  annotate(geom = "text", x = 0.4, y = 0.55, label = "1.5x", family = "Karla", colour = "grey", vjust = 0, angle = 30) + 
+  annotate(geom = "text", x = 0.4, y = 0.7, label = "2x", family = "Karla", colour = "grey", vjust = 0, angle = 20) +
+    labs(x = "Between Person Deficit", y = "Within Person Deficit") +
+    theme_mgpub()
+  
+  #return(plot)
+  return(list(reg, plot))
+  
+}
+
+list_to_matrix <- function(lst) {
+  matrix(unlist(lst), nrow = 2)
+}
+
+forest_cc_function <- function(model, ...){
+  forest.meta(model,
+              sortvar = acl_timepoint_mean,
+              common = FALSE,
+              prediction = FALSE,
+              at = c(0.6, 0.8, 1, 1.2),
+              #xlab = label,
+              #xlab.pos = xlab,
+              xlim = c(0.5, 1.3),
+              smlab = "",
+              leftcols = c("study", "acl_timepoint_mean", "n_acl_2"),
+              leftlabs = c("Study", "Months\npost ACLR", "n\nACLR"),
+              rightcols = c("effect.ci"),
+              rightlabs = c("RoM [95% CI]"),
+              just.addcols = "left",
+              addrows.below.overall = 0,
+              digits.addcols = 1,
+              print.pval.Q = FALSE,
+              fontfamily = "Karla",
+              ff.predict = 1,
+              ref = 1,
+              col.diamond = "black",
+              print.subgroup.labels = TRUE, 
+              subgroup.name = "Type",
+              test.subgroup = FALSE, 
+              #subgroup.hetstat = FALSE, 
+              col.random = "grey",
+              ...)
+}
+
+```
+
+```{r libraries}
+library(metafor) # for meta-analysis
+library(clubSandwich) # for covariance matrix and robust ci estimates
+library(rms) # for fitting splines
+library(ellipse)
+library(ggpubr)
+library(mgfunctions)
+library(kableExtra)
+```
+
+# 1. Quadriceps Strength - Within Person
+
+```{r quad withindata}
+# Generate the within person quad strength data
+quad <- within_data %>%
+  rename(acl_graft_group = graft_group) %>% 
+  filter(str_detect(measure, "quad")) %>% # take all quad based outcomes
+  filter(timepoint_mean >2, # remove pre-operative data
+         timepoint_mean < 120, # remove >10 year data
+         str_detect(graft, "contralateral|Contralateral", negate = TRUE)) %>%  # remove any contralateral grafts
+  mutate(es_id = row_number()) %>% # effect size id number for use in random effects
+  mutate(measure_2 = case_when( # classify different outcomes into subgroups:
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90|isk con 120") ~ "Slow Isokinetic"
+  )) %>%
+  filter(!is.na(measure_2)) 
+
+# Reducing timepoint down to categories (3, 6, 12, 24, 48, 96 months post)
+# not using this at the moment but keeping code here for now
+quad_cat <- quad %>%
+  mutate(timepoint_cut = cut(timepoint_mean, 
+                             breaks = c(0, 4.5, 9, 18, 36, 72, Inf), 
+                             labels = c(3, 6, 12, 24, 48, 96))) 
+  #group_by(cohort, timepoint_cut, group, measure_2) %>%
+  # if multiple timepoints allocated to same category, take the closest to the categorical timepoint
+  #slice(which.min(abs(timepoint_mean - as.numeric(as.character(timepoint_cut))))) %>% 
+  #ungroup()
+
+# separate subgroups of data based on contraction type
+# Some studies report multiple outcomes in the same subgroup
+# Case by case removal of data 
+# Generally:
+# for fast if they have isk con 180 use that if possible, otherwise use speed closest to this.
+# for slow use isk con 60, or 90
+
+fastdata <- quad_cat %>% filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Bailey 2019" & measure == "quad isk con 300"),
+         !(cohort == "Drocco 2017" & measure == "quad isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "quad isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "quad isk con 300"),
+         !(cohort == "Tourville 2014" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2020" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "quad isk con 300")
+         ) 
+slowdata <- quad_cat %>% filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Li 2022" & measure == "quad isk con 30"),
+         !(cohort == "Siney 2010" & measure == "quad isk con 90"),
+         !(cohort == "Zult 2017" & measure == "quad isk con 120"),
+         !(cohort == "Pamukoff 2018" & measure == "quad isk con 120"))
+isodata <- quad_cat %>% filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Karanikas 2005" & measure == "quad mvic 0"),
+         !(cohort == "Labanca 2018" & measure == "quad mvic 30"),
+         !(cohort == "Labanca 2016" & measure == "quad mvic 30"),
+         !(cohort == "Wongcharoenwatana 2019" & measure == "quad mvic 90 hhd prone"))
+
+```
+
+### Specify covariance matrix
+
+Need to create a full covariance matrix.
+Using `clubSandwhich` package to help
+Assuming a correlation of 0.85 between timepoints.
+
+```{r quadwithin covariance, include=TRUE}
+
+fastV <- impute_covariance_matrix(vi = fastdata$vi, 
+                                  cluster = fastdata$cohort, # cluster is cohort (not study)
+                                  ti = fastdata$timepoint_mean, # timepoint 
+                                  ar1 = 0.85, # auto-correlation between timepoints
+                                  check_PD = TRUE, # check positive definite afterwards
+                                  smooth_vi = TRUE,
+                                  return_list = FALSE) # return the full matrix
+
+slowV <- impute_covariance_matrix(vi = slowdata$vi, 
+                                  cluster = slowdata$cohort,
+                                  ti = slowdata$timepoint_mean,
+                                  ar1 = 0.85,
+                                  smooth_vi = TRUE,
+                                  return_list = FALSE)
+
+isoV <- impute_covariance_matrix(vi = isodata$vi, 
+                                  cluster = isodata$cohort,
+                                  ti = isodata$timepoint_mean,
+                                  ar1 = 0.85,
+                                  check_PD = TRUE,
+                                  smooth_vi = TRUE,
+                                 return_list = FALSE)
+
+```
+
+### Model Selection
+Data are now ready for meta-analysis
+
+Need to now decide on how to fit models. Several different structures were trialed in piloting.
+
+Based on piloting best results were achieved with fitting random effects for timepoints, nested within cohorts. Trialled fitting extra random effects e.g. effect size id (es_id), as well as separate models where study group was also a separate random effect, however resulting models were too complex, with indistinguishable random effects and overall a simpler model chosen.
+
+Decision making here revolves around how to fit the timepoint predictor - i.e. what sort of relationship is present between `yi` and `timepoint` 
+Different models are generated an then using fit statistics (AIC, BIC, AIcc), visual inspection of fit and expected fit based on knowledge to decide on best fit.
+
+5 different shapes of fit tried:
+- linear
+- log
+- polynomial
+- 3 knot restricted cubic spline
+- 4 knot restricted cubic spline
+
+```{r quadwithin modselect, include=TRUE}
+
+# Create 'empty' models without timepoint used as a moderator variable.
+# Will use these models to then build different versions on
+# Using a continuous time auto-regressive variance structure (CAR)
+
+slow_mv_empty <- rma.mv(yi, slowV, 
+                        data = slowdata, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+fast_mv_empty <- rma.mv(yi, fastV, 
+                  data = fastdata, 
+                  random = list(~ timepoint_mean|cohort),
+                  struct = c("CAR"))
+
+iso_mv_empty <- rma.mv(yi, isoV, 
+                        data = isodata, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+```
+
+#### Slow Isokinetic Quadriceps
+4 knot spline best fit
+```{r quadwithin slowmod}
+mod_selection(slow_mv_empty)
+```
+
+#### Fast Isokinetic Quadriceps
+4 knot spline best fit
+```{r quadwithin fastmod}
+mod_selection(fast_mv_empty)
+```
+
+#### Isometric Quadriceps
+Log is best fitting, however 4 knot spline appears more realistic, with marginally worse fit.
+```{r quadwithin isomod}
+mod_selection(iso_mv_empty)
+```
+
+## Final models
+
+### Slow Isokinetic Quadriceps
+
+```{r quadwithin slowfinal}
+slow_mv <- rma.mv(yi, slowV, 
+                  mods = ~rcs(timepoint_mean, 4), 
+                  data = slowdata, 
+                  random = list(~ timepoint_mean|cohort),
+                  struct = c("CAR"))
+
+robust(slow_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(slow_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadwithin slow plots}
+mv_plotdetails(slow_mv, include_pi = TRUE)
+
+mv_plotdetails(slow_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(slow_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Fast Isokinetic Quadriceps
+
+```{r quadwithin fastfinal}
+fast_mv <- rma.mv(yi, fastV, 
+                  mods = ~rcs(timepoint_mean, 4), 
+                  data = fastdata, 
+                  random = list(~ timepoint_mean|cohort),
+                  struct = c("CAR"))
+
+robust(fast_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(fast_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadwithin fast plots}
+mv_plotdetails(fast_mv, include_pi = TRUE)
+
+mv_plotdetails(fast_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(fast_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Isometric Quadriceps
+
+```{r quadwithin isofinal}
+iso_mv <- rma.mv(yi, isoV, 
+                  mods = ~rcs(timepoint_mean, 4), 
+                  data = isodata, 
+                  random = list(~ timepoint_mean|cohort),
+                  struct = c("CAR"))
+
+robust(iso_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(iso_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadwithin iso plots}
+mv_plotdetails(iso_mv, include_pi = TRUE)
+
+mv_plotdetails(iso_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(iso_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+##########3
+
+# 2. Hamstring Strength - Within Person
+
+```{r hs withindata}
+
+# Data for Hamstring
+hs <- within_data %>%
+  rename(acl_graft_group = graft_group) %>%
+  filter(str_detect(measure, "hs")) %>%
+ filter(timepoint_mean >2, # remove pre-operative data
+         timepoint_mean < 120, # remove >10 year data
+         str_detect(graft, "contralateral|Contralateral", negate = TRUE)) %>%  # remove any contralateral grafts
+  mutate(es_id = row_number()) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90|isk con 120") ~ "Slow Isokinetic"
+  )) %>%
+  filter(!is.na(measure_2))
+
+# Reducing timepoint down to categories (3, 6, 12, 24, 48, 96 months post)
+# not using this at the moment but keeping code here for now
+
+hs_cat <- hs %>%
+  mutate(timepoint_cut = cut(timepoint_mean, 
+                             breaks = c(0, 4.5, 9, 18, 36, 72, Inf), 
+                             labels = c(3, 6, 12, 24, 48, 96))) 
+  #group_by(cohort, timepoint_cut, measure_2) %>%
+  # if multiple timepoints allocated to same category, take the closest to the categorical timepoint
+  #slice(which.min(abs(timepoint_mean - as.numeric(as.character(timepoint_cut))))) %>% 
+  #ungroup()
+
+# separate subgroups of data based on contraction type
+# Some studies report multiple outcomes in the same subgroup
+# Case by case removal of data 
+# Generally:
+# for fast if they have isk con 180 use that if possible, otherwise use speed closest to this.
+# for slow use isk con 60, or 90
+
+hs_fastdata <- hs_cat %>% filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Drocco 2017" & measure == "hs isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "hs isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "hs isk con 300"),
+         !(cohort == "Tourville 2014" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2020" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "hs isk con 300"))
+hs_slowdata <- hs_cat %>% filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Lee 2019" & measure == "hs isk con 60 - deep"),
+         !(cohort == "Kim 2011" & measure == "hs isk con 90 hyperflex"),
+         !(cohort == "Siney 2010" & measure == "hs isk con 90"),
+         !(cohort == "McRae 2013" & measure == "hs isk con 60 supine"),
+         !(cohort == "Li 2022" & measure == "hs isk con 30"),
+         !(cohort == "Jiang 2012" & measure == "hs isk con 120"),
+         !(cohort == "Zult 2017" & measure == "hs isk con 120")
+         )
+hs_isodata <- hs_cat %>% filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Hu 2020" & measure == "hs mvic 30 hhd"),
+         !(cohort == "Hu 2020" & measure == "hs mvic 60 hhd"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 30"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 105"))
+```
+
+### Specify covariance matrix
+
+Need to create a full covariance matrix.
+Using `clubSandwhich` package to help
+Assuming a correlation of 0.85 between timepoints.
+
+```{r hswithin covariance, include=TRUE}
+
+hs_fastV <- impute_covariance_matrix(vi = hs_fastdata$vi, 
+                                  cluster = hs_fastdata$cohort,
+                                  ti = hs_fastdata$timepoint_mean,
+                                  ar1 = 0.85,
+                                  check_PD = TRUE,
+                                  smooth_vi = TRUE, 
+                                  return_list = FALSE)
+
+hs_slowV <- impute_covariance_matrix(vi = hs_slowdata$vi, 
+                                  cluster = hs_slowdata$cohort,
+                                  ti = hs_slowdata$timepoint_mean,
+                                  ar1 = 0.85,
+                                  smooth_vi = TRUE,
+                                  return_list = FALSE)
+
+hs_isoV <- impute_covariance_matrix(vi = hs_isodata$vi, 
+                                 cluster = hs_isodata$cohort,
+                                 ti = hs_isodata$timepoint_mean,
+                                 ar1 = 0.85,
+                                 check_PD = TRUE,
+                                 smooth_vi = TRUE,
+                                 return_list = FALSE)
+
+```
+
+### Model Selection
+
+```{r hswithin modselect, include=TRUE}
+
+# Create 'empty' models without timepoint used as a moderator variable.
+# Will use these models to then build different versions on
+# Using a continuous time auto-regressive variance structure (CAR)
+
+hs_fast_mv_empty <- rma.mv(yi, hs_fastV, 
+                        data = hs_fastdata, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+hs_slow_mv_empty <- rma.mv(yi, hs_slowV, 
+                        data = hs_slowdata, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+hs_iso_mv_empty <- rma.mv(yi, hs_isoV, 
+                       data = hs_isodata, 
+                       random = list(~ timepoint_mean|cohort),
+                       struct = c("CAR"))
+
+```
+
+#### Slow Isokinetic Hamstrings
+4 knot spline best fit
+```{r hswithin slowmod}
+mod_selection(hs_slow_mv_empty)
+```
+
+#### Fast Isokinetic Hamstrings
+4 knot spline best fit
+```{r hswithin fastmod}
+mod_selection(hs_fast_mv_empty)
+```
+
+#### Isometric hamstrings
+Log is best fit
+4 knot is overfit.
+```{r hswithin isomod}
+mod_selection(hs_iso_mv_empty)
+```
+
+## Final models
+
+### Slow Isokinetic Hamstrings
+
+```{r hswithin slowfinal}
+hs_slow_mv <- rma.mv(yi, hs_slowV, 
+                    mods = ~rcs(timepoint_mean, 4),
+                    data = hs_slowdata, 
+                    random = list(~ timepoint_mean|cohort),
+                    struct = c("CAR"))
+
+robust(hs_slow_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hs_slow_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hswithin slow plots}
+mv_plotdetails(hs_slow_mv, include_pi = TRUE)
+
+mv_plotdetails(hs_slow_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hs_slow_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Fast Isokinetic Hamstrings
+
+```{r hswithin fastfinal}
+hs_fast_mv <- rma.mv(yi, hs_fastV, 
+                     mods = ~rcs(timepoint_mean, 4),
+                     data = hs_fastdata, 
+                     random = list(~ timepoint_mean|cohort),
+                     struct = c("CAR"))
+
+robust(hs_fast_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hs_fast_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hswithin fast plots}
+mv_plotdetails(hs_fast_mv, include_pi = TRUE)
+
+mv_plotdetails(hs_fast_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hs_fast_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Isometric Hamstrings
+
+```{r hswithin isofinal}
+hs_iso_mv <- rma.mv(yi, hs_isoV, 
+                     mods = ~log(timepoint_mean),
+                     data = hs_isodata, 
+                     random = list(~ timepoint_mean|cohort),
+                     struct = c("CAR"))
+
+robust(hs_iso_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hs_iso_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hswithin iso plots}
+mv_plotdetails(hs_iso_mv, include_pi = TRUE)
+
+mv_plotdetails(hs_iso_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hs_iso_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+####################
+
+
+# 3. Quadriceps Strength - Case Control
+
+```{r quad ccdata}
+# Generate the within person quad strength data
+
+quadcont <- casecontrol %>%
+  filter(str_detect(measure, "quad")) %>%
+  mutate(es_id = row_number(),
+         timepoint_mean = acl_timepoint_mean,
+         group = 1) %>%
+   filter(timepoint_mean >2, # no pre-operative data
+         timepoint_mean < 120) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90|isk con 120") ~ "Slow Isokinetic"
+  )) %>%
+  filter(!is.na(measure_2)) %>%
+  #filter(timepoint_mean < 100) %>%
+  filter(!(cohort == "Laudner 2015" & measure == "quad isk con 300"), # remove where multiple effect sizes in same measure group
+         !(cohort == "Pamukoff 2018" & measure == "quad isk con 120"),
+         !(cohort == "Tourville 2014" & measure == "quad isk con 300"),
+         !(cohort == "Zult 2017" & measure == "quad isk con 120"))
+
+# Reducing timepoint down to categories (3, 6, 12, 24, 48, 96 months post)
+# not using this at the moment but keeping code here for now
+quadcont_cat <- quadcont %>%
+  mutate(timepoint_cut = cut(timepoint_mean, 
+                             breaks = c(0, 4.5, 9, 18, 36, 72, Inf), 
+                             labels = c(3, 6, 12, 24, 48, 96)))
+  #group_by(cohort, timepoint_cut, group, measure_2) %>%
+  # if multiple timepoints allocated to same category, take the closest to the categorical timepoint
+  #slice(which.min(abs(timepoint_mean - as.numeric(as.character(timepoint_cut))))) %>% 
+  #ungroup()
+
+# separate subgroups of data based on contraction type
+
+fastcont <- quadcont_cat %>% filter(measure_2 == "Fast Isokinetic")
+slowcont <- quadcont_cat %>% filter(measure_2 == "Slow Isokinetic")
+isocont <- quadcont_cat %>% filter(measure_2 == "Isometric")
+```
+
+### Specify covariance matrix
+
+Need to create a full covariance matrix.
+Using `clubSandwhich` package to help
+Assuming a correlation of 0.85 between timepoints.
+
+```{r quadcc covariance, include=TRUE}
+
+qcont_slowV <- impute_covariance_matrix(vi = slowcont$vi, 
+                                  cluster = slowcont$cohort,
+                                  ti = slowcont$timepoint_mean,
+                                  ar1 = 0.85,
+                                  check_PD = TRUE,
+                                  return_list = FALSE)
+
+qcont_fastV <- impute_covariance_matrix(vi = fastcont$vi, 
+                                  cluster = fastcont$cohort,
+                                  ti = fastcont$timepoint_mean,
+                                  ar1 = 0.85,
+                                  check_PD = TRUE,
+                                  return_list = FALSE)
+
+qcont_isoV <- impute_covariance_matrix(vi = isocont$vi, 
+                                 cluster = isocont$cohort,
+                                 ti = isocont$timepoint_mean,
+                                 ar1 = 0.85,
+                                 check_PD = TRUE,
+                                 return_list = FALSE)
+
+
+```
+
+### Model Selection
+Data are now ready for meta-analysis
+
+
+```{r quadcc modselect, include=TRUE}
+
+# Create 'empty' models without timepoint used as a moderator variable.
+# Will use these models to then build different versions on
+# Using a continuous time auto-regressive variance structure (CAR)
+
+qcont_slow_mv_empty <- rma.mv(yi, qcont_slowV, 
+                        data = slowcont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+qcont_fast_mv_empty <- rma.mv(yi, qcont_fastV, 
+                        data = fastcont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+qcont_iso_mv_empty <- rma.mv(yi, qcont_isoV, 
+                       data = isocont, 
+                       random = list(~ timepoint_mean|cohort),
+                       struct = c("CAR"))
+
+```
+
+#### Slow Isokinetic Quadriceps
+l=Log best fit
+```{r quadcc slowmod}
+mod_selection(qcont_slow_mv_empty)
+```
+
+#### Fast Isokinetic Quadriceps
+Log spline best fit
+```{r quadcc fastmod}
+mod_selection(qcont_fast_mv_empty)
+```
+
+#### Isometric Quadriceps
+Log is best fit
+```{r quadcc isomod}
+mod_selection(qcont_iso_mv_empty)
+```
+
+## Final models
+
+### Slow Isokinetic Quadriceps
+
+```{r quadcc slowfinal}
+qcont_slow_mv <- rma.mv(yi, qcont_slowV, 
+                        mods = ~log(timepoint_mean),
+                        data = slowcont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+robust(qcont_slow_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(qcont_slow_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadcc slow plots}
+mv_plotdetails(qcont_slow_mv, include_pi = TRUE)
+
+mv_plotdetails(qcont_slow_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(qcont_slow_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+
+```
+
+
+### Fast Isokinetic Quadriceps
+
+```{r quadcc fastfinal}
+qcont_fast_mv <- rma.mv(yi, qcont_fastV, 
+                              mods = ~log(timepoint_mean),
+                              data = fastcont, 
+                              random = list(~ timepoint_mean|cohort),
+                              struct = c("CAR"))
+
+robust(qcont_fast_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(qcont_fast_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadcc fast plots}
+mv_plotdetails(qcont_fast_mv, include_pi = TRUE)
+
+mv_plotdetails(qcont_fast_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(qcont_fast_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Isometric Quadriceps
+
+```{r quadcc isofinal}
+qcont_iso_mv <- rma.mv(yi, qcont_isoV, 
+                        mods = ~log(timepoint_mean),
+                        data = isocont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+robust(qcont_iso_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(qcont_iso_mv)
+
+```
+
+Plots - normal and log scale
+``` {r quadcc iso plots}
+mv_plotdetails(qcont_iso_mv, include_pi = TRUE)
+
+mv_plotdetails(qcont_iso_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(qcont_iso_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+##
+
+# 4. Hamstring Strength - Case Control
+
+```{r hs ccdata}
+
+hscont <- casecontrol %>%
+  filter(str_detect(measure, "hs")) %>%
+  mutate(es_id = row_number(),
+         timepoint_mean = acl_timepoint_mean,
+         group = 1) %>%
+   filter(timepoint_mean >2, # no pre-operative data
+         timepoint_mean < 120) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90|isk con 120") ~ "Slow Isokinetic"
+  )) %>%
+  filter(!is.na(measure_2)) %>%
+  filter(timepoint_mean < 100) %>%
+  filter(!(cohort == "Laudner 2015" & measure == "hs isk con 300"), # remove where multiple effect sizes in same measure group
+         !(cohort == "Tourville 2014" & measure == "hs isk con 300"),
+         !(cohort == "Zult 2017" & measure == "hs isk con 120"))
+
+# Reducing timepoint down to categories (3, 6, 12, 24, 48, 96 months post)
+# not using this at the moment but keeping code here for now
+
+hscont_cat <- hscont %>%
+  mutate(timepoint_cut = cut(timepoint_mean, 
+                             breaks = c(0, 4.5, 9, 18, 36, 72, Inf), 
+                             labels = c(3, 6, 12, 24, 48, 96))) 
+  #group_by(cohort, timepoint_cut, measure_2) %>%
+  # if multiple timepoints allocated to same category, take the closest to the categorical timepoint
+  #slice(which.min(abs(timepoint_mean - as.numeric(as.character(timepoint_cut))))) %>% 
+  #ungroup()
+
+# separate subgroups of data based on contraction type
+
+hs_fastcont <- hscont_cat %>% filter(measure_2 == "Fast Isokinetic")
+hs_slowcont <- hscont_cat %>% filter(measure_2 == "Slow Isokinetic")
+hs_isocont <- hscont_cat %>% filter(measure_2 == "Isometric")
+```
+
+### Specify covariance matrix
+
+Need to create a full covariance matrix.
+Using `clubSandwhich` package to help
+Assuming a correlation of 0.85 between timepoints.
+
+```{r hscc covariance, include=TRUE}
+
+hcont_fastV <- impute_covariance_matrix(vi = hs_fastcont$vi, 
+                                        cluster = hs_fastcont$cohort,
+                                        ti = hs_fastcont$timepoint_mean,
+                                        ar1 = 0.85,
+                                        check_PD = TRUE,
+                                        smooth_vi = TRUE, 
+                                        return_list = FALSE)
+
+hcont_slowV <- impute_covariance_matrix(vi = hs_slowcont$vi, 
+                                        cluster = hs_slowcont$cohort,
+                                        ti = hs_slowcont$timepoint_mean,
+                                        ar1 = 0.85,
+                                        smooth_vi = TRUE,
+                                        return_list = FALSE)
+
+hcont_isoV <- impute_covariance_matrix(vi = hs_isocont$vi, 
+                                       cluster = hs_isocont$cohort,
+                                       ti = hs_isocont$timepoint_mean,
+                                       ar1 = 0.85,
+                                       check_PD = TRUE,
+                                       smooth_vi = TRUE,
+                                       return_list = FALSE)
+
+```
+
+### Model Selection
+
+```{r hscc modselect, include=TRUE}
+
+# Create 'empty' models without timepoint used as a moderator variable.
+# Will use these models to then build different versions on
+# Using a continuous time auto-regressive variance structure (CAR)
+
+hcont_slow_mv_empty <- rma.mv(yi, hcont_slowV, 
+                              data = hs_slowcont, 
+                              random = list(~ timepoint_mean|cohort),
+                              struct = c("CAR"))
+
+hcont_fast_mv_empty <- rma.mv(yi, hcont_fastV, 
+                              data = hs_fastcont, 
+                              random = list(~ timepoint_mean|cohort),
+                              struct = c("CAR"))
+
+hcont_iso_mv_empty <- rma.mv(yi, hcont_isoV, 
+                             data = hs_isocont, 
+                             random = list(~ timepoint_mean|cohort),
+                             struct = c("CAR"))
+
+```
+
+#### Slow Isokinetic Hamstrings
+Log best fit
+```{r hscc slowmod}
+mod_selection(hcont_slow_mv_empty)
+```
+
+#### Fast Isokinetic Hamstrings
+Log best fit
+```{r hscc fastmod}
+mod_selection(hcont_fast_mv_empty)
+```
+
+#### Isometric hamstrings
+Polynomial (2) is best fit
+A lot of uncertainty here.
+```{r hscc isomod}
+mod_selection(hcont_iso_mv_empty)
+```
+
+## Final models
+
+### Slow Isokinetic Hamstrings
+
+```{r hscc slowfinal}
+hcont_slow_mv <- rma.mv(yi, hcont_slowV, 
+                        mods = ~log(timepoint_mean),
+                        data = hs_slowcont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+robust(hcont_slow_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hcont_slow_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hscc slow plots}
+mv_plotdetails(hcont_slow_mv, include_pi = TRUE)
+
+mv_plotdetails(hcont_slow_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hcont_slow_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Fast Isokinetic Hamstrings
+
+```{r hscc fastfinal}
+hcont_fast_mv <- rma.mv(yi, hcont_fastV, 
+                        mods = ~log(timepoint_mean),
+                        data = hs_fastcont, 
+                        random = list(~ timepoint_mean|cohort),
+                        struct = c("CAR"))
+
+robust(hcont_fast_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hcont_fast_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hscc fast plots}
+mv_plotdetails(hcont_fast_mv, include_pi = TRUE)
+
+mv_plotdetails(hcont_fast_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hcont_fast_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+### Isometric Hamstrings
+
+```{r hscc isofinal}
+hcont_iso_mv <- rma.mv(yi, hcont_isoV, 
+                       mods = ~poly(timepoint_mean, degree = 2, raw = TRUE),
+                       data = hs_isocont, 
+                       random = list(~ timepoint_mean|cohort),
+                       struct = c("CAR"))
+
+
+robust(hcont_iso_mv, cluster = cohort, clubSandwich = TRUE)
+
+profile(hcont_iso_mv)
+
+```
+
+Plots - normal and log scale
+``` {r hscc iso plots}
+mv_plotdetails(hcont_iso_mv, include_pi = TRUE)
+
+mv_plotdetails(hcont_iso_mv, logscale = TRUE, showgraft = FALSE)
+
+predict_details(hcont_iso_mv) %>% kbl() %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+# 5. Bivariate Analysis - Comparing Between and Within person comparisons
+Of interest is whether studies that compare both between person and within person show similar effects - i.e. are the effects different
+For this we select all the datapoints that have both between and within person comparisons and conduct a bivariate meta-analysis.
+We have to account for non-independence of samples in the analysis conducting a variance/covariance matrix and also fitting random effects for this (type of outcome: within/between person nested within cohorts). To calculate this we assumed a rho of 0.7. Sensitivity analyses show that estimates are stable to different values for this. 
+
+Because the majority of studies report only between person comparisons, we chose to only look at those studies that measured both (i.e. "bivariate"), otherwise estimation of the correlation between effects will be spurious. 
+
+Set up:
+
+```{r bivariate_setup}
+
+## Bivariate Analyses
+
+## Investigating relationship between within and between person estimates
+
+# Within Person Data
+quad1 <- quad %>% 
+  select(study, cohort, measure, measure_2, acl_n, timepoint, timepoint_mean, group, acl_graft_group, yi, vi) %>%
+  rename(acl_group = group) %>%
+  mutate(type = "within")
+
+# Between person data
+quad2 <- quadcont %>% 
+  select(study, cohort, measure, measure_2, acl_n, timepoint, timepoint_mean, acl_group, acl_graft_group, yi, vi) %>%
+  mutate(type = "casecontrol")
+
+# Join together
+quad_joined <- bind_rows(quad1, quad2)
+
+# Split based on contraction types
+slow_joined <- quad_joined %>% filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Li 2022" & measure == "quad isk con 30"),
+         !(cohort == "Siney 2010" & measure == "quad isk con 90")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>% # make sure to only include studies who measure both effects
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% # take one effect per study, preferably closest to 12 months if multiple
+  ungroup() %>%
+  filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+
+
+fast_joined <- quad_joined %>% filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Bailey 2019" & measure == "quad isk con 300"),
+         !(cohort == "Drocco 2017" & measure == "quad isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "quad isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "quad isk con 300"),
+         !(cohort == "Pamukoff 2018" & measure == "quad isk con 120"),
+         !(cohort == "Tourville 2014" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2020" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "quad isk con 300"),
+         !(cohort == "Zult 2017" & measure == "quad isk con 120")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>%
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% 
+  ungroup() %>%
+    filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+iso_joined <- quad_joined %>% filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Karanikas 2005" & measure == "quad mvic 0"),
+         !(cohort == "Labanca 2018" & measure == "quad mvic 30"),
+         !(cohort == "Labanca 2016" & measure == "quad mvic 30")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>%
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% 
+  ungroup()  %>%
+  filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+# Create covariance matrices for each, assuming rho of 0.7
+slowjoinedV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = slow_joined,
+                     checkpd = TRUE)
+
+fastjoinedV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = fast_joined,
+                     checkpd = TRUE)
+
+isojoinedV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = iso_joined,
+                     checkpd = TRUE)
+
+# Fit individual models with random effects for type of effect, nested within each cohort.
+
+slow_joined_mv <- rma.mv(yi,
+                         slowjoinedV,
+                         mods = ~ type - 1, # remove intercept to generate estimate for each.
+                         random = list(~ type | cohort),
+                         struct = c("UN"),
+                         data = slow_joined,
+                         cvvc = "varcov") # need this to use  later with matreg
+
+fast_joined_mv <- rma.mv(yi,
+                         fastjoinedV,
+                         mods = ~ type - 1,
+                         random = list(~ type | cohort),
+                         struct = c("UN"),
+                         data = fast_joined,
+                         cvvc = "varcov")
+
+iso_joined_mv <- rma.mv(yi,
+                         isojoinedV,
+                         mods = ~ type - 1,
+                         random = list(~ type | cohort),
+                         struct = c("UN"),
+                         data = iso_joined,
+                        cvvc = "varcov")
+
+
+####
+## Hamstring
+####
+
+hs1 <- hs %>% 
+  select(study, cohort, measure, measure_2, acl_n, timepoint, timepoint_mean, group, acl_graft_group, yi, vi) %>%
+  rename(acl_group = group) %>%
+  mutate(type = "within")
+
+
+hs2 <- hscont %>% 
+  select(study, cohort, measure, measure_2, acl_n, timepoint, timepoint_mean, acl_group, acl_graft_group, yi, vi) %>%
+  mutate(type = "casecontrol")
+
+hs_joined <- bind_rows(hs1, hs2)
+
+slow_joined_hs <- hs_joined %>% filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Lee 2019" & measure == "hs isk con 60 - deep"),
+         !(cohort == "Kim 2011" & measure == "hs isk con 90 hyperflex"),
+         !(cohort == "Siney 2010" & measure == "hs isk con 90"),
+         !(cohort == "McRae 2013" & measure == "hs isk con 60 supine"),
+         !(cohort == "Li 2022" & measure == "hs isk con 30")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>%
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% 
+  ungroup() %>%
+  filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+fast_joined_hs <- hs_joined %>% filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Drocco 2017" & measure == "hs isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "hs isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "hs isk con 300"),
+         !(cohort == "Tourville 2014" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2020" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "hs isk con 300")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>%
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% 
+  ungroup() %>%
+  filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+iso_joined_hs <- hs_joined %>% filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Hu 2020" & measure == "hs mvic 30 hhd"),
+         !(cohort == "Hu 2020" & measure == "hs mvic 60 hhd"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 30"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 105")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>%
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% 
+  ungroup()  %>%
+  filter(!is.na(vi)) %>% # remove any missing data
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+slowjoined_hsV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = slow_joined_hs,
+                     checkpd = TRUE)
+
+fastjoined_hsV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = fast_joined_hs,
+                     checkpd = TRUE)
+
+isojoined_hsV <- vcalc(vi,
+                    cluster = study,
+                    type = type,
+                    rho = 0.7,
+                    data = iso_joined_hs,
+                    checkpd = TRUE)
+
+
+slow_joined_hs_mv <- rma.mv(yi,
+                         slowjoined_hsV,
+                         mods = ~ type - 1,
+                         random = list(~ type | cohort),
+                         struct = c("UN"),
+                         data = slow_joined_hs,
+                         cvvc = "varcov")
+
+fast_joined_hs_mv <- rma.mv(yi,
+                         fastjoined_hsV,
+                         mods = ~ type - 1,
+                         random = list(~ type | cohort),
+                         struct = c("UN"),
+                         data = fast_joined_hs,
+                         cvvc = "varcov")
+
+iso_joined_hs_mv <- rma.mv(yi,
+                        isojoined_hsV,
+                        mods = ~ type - 1,
+                        random = list(~ type | cohort),
+                        struct = c("UN"),
+                        data = iso_joined_hs,
+                        cvvc = "varcov")
+
+```
+
+For model simplicity we only selected one estimate per study (i.e. one timepoint), as almost all between person studies only measure one timepoint. For the few studies that report multiple, we took the timepoint closest to 12 months (most common timepoint)
+
+The resulting analysis provides an estimate for both between and within person estimates. More interestingly we also get an estimate of the correlation between effects.
+
+We can then regress the true effects from the model to see the relationship between the two outcomes
+
+In general we can say that between person effects don't always mirror within person effects
+
+### Quadriceps - Slow Isokinetic
+```{r slow_q_biv}
+summary(slow_joined_mv)
+
+corplot_function(slow_joined_mv)
+```
+
+### Quadriceps - Fast Isokinetic
+```{r fast_q_biv}
+summary(fast_joined_mv)
+
+corplot_function(fast_joined_mv)
+```
+
+### Quadriceps - Isometric
+```{r iso_q_biv}
+summary(iso_joined_mv)
+
+corplot_function(iso_joined_mv)
+```
+
+### Hamstrings - Slow Isokinetic
+```{r slow_h_biv}
+summary(slow_joined_hs_mv)
+
+corplot_function(slow_joined_hs_mv)
+```
+
+### Hamstrings - Fast Isokinetic
+```{r fast_h_biv}
+summary(fast_joined_hs_mv)
+
+corplot_function(fast_joined_hs_mv)
+```
+
+### Hamstrings - Isometric
+```{r iso_h_biv}
+summary(iso_joined_hs_mv)
+
+corplot_function(iso_joined_hs_mv)
+```
+
+# 6. Summary 
+
+### Quadriceps - Slow
+```{r quadsum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(slow_mv),
+  mv_plotfunction(qcont_slow_mv),
+  nrow = 1,
+  legend = "none")
+
+```
+
+### Quadriceps - Fast
+```{r quadfastsum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(fast_mv),
+  mv_plotfunction(qcont_fast_mv),
+  nrow = 1,
+  legend = "none")
+```
+
+### Quadriceps - Isometric
+```{r quadisosum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(iso_mv),
+  mv_plotfunction(qcont_iso_mv), 
+  nrow = 1,
+  legend = "none")
+
+
+```
+
+### Hamstrings - Slow
+```{r hamslowsum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(hs_slow_mv),
+  mv_plotfunction(hcont_slow_mv),
+  nrow = 1,
+  legend = "none")
+
+```
+
+### Hamstrings - Fast
+```{r hamfastsum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(hs_fast_mv),
+  mv_plotfunction(hcont_fast_mv),
+  nrow = 1,
+  legend = "none")
+
+```
+
+### Hamstrings - Isometric
+```{r hamisosum, echo = FALSE}
+ggarrange(
+  mv_plotfunction(hs_iso_mv),
+  mv_plotfunction(hcont_iso_mv),
+  nrow = 1,
+  legend = "none")
+
+```
+
+# 7. Eccentric Contractinos
+
+```{r eccentric}
+
+ecc_within <- within_data %>%
+  filter(!study %in% c("Tengman 2014b", "Hogberg 2023")) %>%
+  rename(acl_timepoint_mean = timepoint_mean) %>%
+  mutate(n_acl_2 = as.character(as.integer(acl_n))) %>%
+  filter(str_detect(measure, "ecc"),
+         str_detect(measure, "quad|hs")) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "150|180|230|240|300") ~ "Fast Isokinetic",
+    str_detect(measure, "30|60|90") ~ "Slow Isokinetic"
+  )) %>%
+  mutate(measure_3 = case_when(
+    acl_timepoint_mean <= 12 & measure_2 == "Slow Isokinetic" ~ "Slow Isokinetic <= 1 year",
+    acl_timepoint_mean > 12 & measure_2 == "Slow Isokinetic" ~ "Slow Isokinetic > 1 year",
+    TRUE ~ measure_2),
+    measure_3 = factor(measure_3, levels = c("Slow Isokinetic <= 1 year", "Slow Isokinetic > 1 year", 
+                                            "Fast Isokinetic"))
+  )
+ecc_within$sei[ecc_within$study == "Gauthier 2022"] <- 0.01209894 # missing for variance for one study, taking value frmo other similar study Raoul.
+
+```
+
+
+## Quadriceps Eccentric - Within Person
+
+Only 6 studies report eccentric quadriceps outcomes, most for slow eccentric, at variety of timepoints.
+
+
+```{r ecc quads}
+library(meta) # use meta package to fit univariate meta-analyses (for nicer plots)
+
+quad_ecc_meta <- ecc_within %>%
+  filter(str_detect(measure, "quad")) %>%
+  metagen(TE = yi, seTE = sei, studlab = study, data = ., subgroup = measure_2, sm = "ROM")
+
+summary(quad_ecc_meta)
+
+forest_cc_function(quad_ecc_meta, overall = FALSE, prediction.subgroup = TRUE, weight.study = "same", hetstat = FALSE)
+
+```
+
+
+## Hamstring Eccentric - Within Person
+
+11 studies report eccentric quadriceps outcomes, most for slow eccentric, at variety of timepoints.
+
+```{r ecc hs, fig.height=8}
+
+hs_ecc_meta <- ecc_within %>%
+  filter(str_detect(measure, "hs")) %>%
+  metagen(TE = yi, seTE = sei, studlab = study, data = ., subgroup = measure_3, sm = "ROM")
+
+summary(hs_ecc_meta)
+
+forest_cc_function(hs_ecc_meta, overall = FALSE, prediction.subgroup = TRUE, weight.study = "same", hetstat = FALSE)
+
+```
+
+## Between Person 
+
+Only 3 studies report between-person comparisons for eccentric, across quite varied timepoints. No meta-analysis run. Plot here to show effects.
+
+```{r ecc between, echo = FALSE}
+
+ecc_casecontrol <- casecontrol %>%
+  mutate(n_acl_2 = as.character(as.integer(acl_n))) %>%
+  filter(str_detect(measure, "ecc"),
+         str_detect(measure, "quad|hs")) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "150|180|230|240|300") ~ "Fast Isokinetic",
+    str_detect(measure, "30|60|90") ~ "Slow Isokinetic"
+  )) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "quad") ~ paste0("Quadriceps - ", measure_2),
+    str_detect(measure, "hs") ~ paste0("Hamstrings - ", measure_2)
+  ))
+
+
+ecc_casecontrol_meta <- ecc_casecontrol %>%
+  metagen(TE = yi, seTE = sei, studlab = study, data = ., subgroup = measure_2, sm = "ROM")
+
+forest_cc_function(ecc_casecontrol_meta, overall = FALSE, prediction.subgroup = TRUE, weight.study = "same", hetstat = FALSE)
+
+```
+
+
+# 8. Bivariate redo
+
+``` {r bivariateredo}
+
+# Split based on contraction types
+joined <- quad_joined %>%
+  filter(!(cohort == "Li 2022" & measure == "quad isk con 30"),
+         !(cohort == "Siney 2010" & measure == "quad isk con 90")) %>%
+  filter(!(cohort == "Bailey 2019" & measure == "quad isk con 300"),
+         !(cohort == "Drocco 2017" & measure == "quad isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "quad isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "quad isk con 300"),
+         !(cohort == "Pamukoff 2018" & measure == "quad isk con 120"),
+         !(cohort == "Tourville 2014" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2020" & measure == "quad isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "quad isk con 300"),
+         !(cohort == "Zult 2017" & measure == "quad isk con 120")) %>%
+  filter(!(cohort == "Karanikas 2005" & measure == "quad mvic 0"),
+         !(cohort == "Labanca 2018" & measure == "quad mvic 30"),
+         !(cohort == "Labanca 2016" & measure == "quad mvic 30")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>% # make sure to only include studies who measure both effects
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% # take one effect per study, preferably closest to 12 months if multiple
+  ungroup() %>%
+  mutate(measure_2 = factor(measure_2, levels = c("Slow Isokinetic", "Isometric", "Fast Isokinetic"))) %>%
+  group_by(study, type) %>%
+  arrange(study, measure) %>%
+  mutate(row = row_number()) %>%
+  filter(row == 1) %>%
+  select(-row) %>%
+  ungroup() %>%
+  filter(!is.na(vi)) %>% # remove any missing data 
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+joinedV <- vcalc(vi,
+                     cluster = study,
+                     type = type,
+                     rho = 0.7,
+                     data = joined,
+                     checkpd = TRUE)
+
+
+joined_mv <- rma.mv(yi,
+                         joinedV,
+                         mods = ~ type - 1, # remove intercept to generate estimate for each.
+                         random = list(~ type | study),
+                         struct = c("UN"),
+                         data = joined,
+                         cvvc = "varcov") # need this to use  later with matreg
+
+
+# Split based on contraction types
+hs_joined <- hs_joined %>%
+  filter(!(cohort == "Lee 2019" & measure == "hs isk con 60 - deep"),
+         !(cohort == "Kim 2011" & measure == "hs isk con 90 hyperflex"),
+         !(cohort == "Siney 2010" & measure == "hs isk con 90"),
+         !(cohort == "McRae 2013" & measure == "hs isk con 60 supine"),
+         !(cohort == "Li 2022" & measure == "hs isk con 30")) %>%
+  filter(!(cohort == "Drocco 2017" & measure == "hs isk con 240"),
+         !(cohort == "Kyritsis 2016" & measure == "hs isk con 300"),
+         !(cohort == "Laudner 2015" & measure == "hs isk con 300"),
+         !(cohort == "Tourville 2014" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2020" & measure == "hs isk con 300"),
+         !(cohort == "Welling 2018b" & measure == "hs isk con 300")) %>%
+  filter(!(cohort == "Hu 2020" & measure == "hs mvic 30 hhd"),
+         !(cohort == "Hu 2020" & measure == "hs mvic 60 hhd"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 30"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 105")) %>%
+  group_by(study, measure, timepoint) %>% 
+  filter(length(type) == 2) %>% # make sure to only include studies who measure both effects
+  ungroup() %>% 
+  group_by(study, measure, type) %>% 
+  slice(which.min(abs(timepoint_mean - as.numeric(12)))) %>% # take one effect per study, preferably closest to 12 months if multiple
+  ungroup() %>%
+  mutate(measure_2 = factor(measure_2, levels = c("Slow Isokinetic", "Isometric", "Fast Isokinetic"))) %>%
+  group_by(study, type) %>%
+  arrange(study, measure) %>%
+  mutate(row = row_number()) %>%
+  filter(row == 1) %>%
+  select(-row) %>%
+  ungroup() %>%
+  filter(!is.na(vi)) %>% # remove any missing data 
+  group_by(study) %>%
+  filter(n() > 1) %>%
+  ungroup()
+
+
+hs_joinedV <- vcalc(vi,
+                 cluster = study,
+                 type = type,
+                 rho = 0.7,
+                 data = hs_joined,
+                 checkpd = TRUE)
+
+
+hs_joined_mv <- rma.mv(yi,
+                    hs_joinedV,
+                    mods = ~ type - 1, # remove intercept to generate estimate for each.
+                    random = list(~ type | study),
+                    struct = c("UN"),
+                    data = hs_joined,
+                    cvvc = "varcov") # need this to use  later with matreg
+```
+
+## Quadriceps - Bivariate
+
+```{r quadbiv}
+summary(joined_mv)
+
+corplot_function(joined_mv)
+
+```
+
+## Hamstring - Bivariate
+
+```{r hsbiv}
+summary(hs_joined_mv)
+
+corplot_function(hs_joined_mv)
+
+```
+

@@ -1,0 +1,243 @@
+study,nf,age,bmi,group,graft,quad,hs,units,time,hc_nf
+Aizawa 2022,54 (33),20 (4.3),21.9 (3),Group 1,mixed,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,0.5,
+Akelman 2016,90 (48),23.51 (2.46),NA,Low tension + High tension,mixed,concentric 60°/s,,lsi,"5, 7",
+Almeida 2019,70 (6),27 (6.3),27.6 (4),Group 1,mixed,"concentric 60°/s,  HHD 90",,nm/kg,2.1,
+Alt 2022,132 (69),23.54 (4.28),NA,Women + Men,mixed,"concentric 30°/s,  concentric 150°/s","eccentric 30°/s,  eccentric 150°/s",nm/kg,1,132 (69)
+Ardern 2010,50 (15),25.42 (6.18),NA,ST-G + ST,HS - ST/G + HS - ST,,"isometric 90°,  isometric 30°,  isometric 105°,  concentric 60°/s,  concentric 180°/s",nm,2.7,
+Arhos 2020a,79 (39),21.15 (7.6),26.03 (3.31),Non-Contact + Contact,Mixed,isometric 90°,,lsi,"1, 2",
+Arhos 2021,76 (38),21.2 (7.7),26.1 (3.1),Combined,mixed,isometric 90°,,lsi,0.6,
+Arumugam 2022,34 (25),24.5 (4.6),23.8 (2.5),ACLR,mixed,isometric,isometric,nm/kg,1.5,46 (39)
+Arundale 2017,39 (0),23.51 (7.6),NA,SAPP + SAPP + PERT,mixed,isometric 90°,,lsi,"1, 2",
+Bailey 2019,78 (43),22.66 (8.19),24.71 (4.44),Femoral nerve block + Adductor canal block,BPTB,"concentric 60°/s,  concentric 300°/s,  concentric 180°/s",,lsi,0.5,
+Balki 2019,26 (0),27.4 (5.93),NA,KT + Sham KT,mixed,isometric 30° HHD,isometric 30° HHD,lsi,,
+Balki 2021,46 (0),31.13 (7.1),NA,ACLR,HS - ST/G,isometric 90° HHD,isometric 90° HHD,kg/kg^0.67,2.9,50 (0)
+Barnett 2020,65 (37),19.38 (5.09),24.68 (3.81),Male + Female,Bridge Enhanced ACL Repair (BEAR),isometric 90° HHD,isometric 90° HHD,lsi,"0.5, 1, 2",
+Batty 2019,100 (46),26.6 (8),NA,100,HS,concentric 60°/s,,nm,"0.5, 1",
+Baumgart 2017,50 (16),29.2 (8.5),26.7 (4.6),Group 1,BPTB,concentric 60°/s,concentric 60°/s,nm/BW (N),2.6,
+Bell 2016,55 (48),18.97 (1.66),NA,Low quadriceps + High quadriceps,mixed,isometric 90° HHD prone,isometric 90° HHD prone,kg/kg,2.5,73 (60)
+Beretta-Piccoli 2016,33 (NA),NA,NA,R12 + R24,HS,isometric 60°,,nm,2.7,19 (ns)
+Bodkin 2017,51 (36),22.87 (4.56),NA,Early + Middle + Late,mixed,concentric 90°/s,concentric 90°/s,nm/kg,4.5,
+Bodkin 2020,40 (20),20.4 (7.1),NA,Repeat measure group,not stated,concentric 90°/s,concentric 90°/s,nm/kg,"0.5, 0.7",
+Bodkin 2021,120 (63),21.3 (8.4),NA,ACLR,not stated,isometric 90°,,nm/kg,0.5,95 (49)
+Bregenhof 2023,51 (23),27.34 (6.02),25.04 (3.98),SNG + CON,HS,isometric 90°,isometric 90°,nm/kg,"1.3, 1.9",
+Bryant 2011,39 (13),28.35 (8.29),NA,ACLR-PT + ACLR STGT,PT + HS - ST/G,,concentric 180°/s,nm/kg,1.9,33 (11)
+Button 2014,21 (5),29.1 (9),NA,ACLR,HS,concentric 90°/s,concentric 90°/s,nm,1.5,21 (9)
+Byrne 2021,313 (0),22.83 (5.25),NA,Isolated ACLR + ACLR + Meniscectomy + ACLR + Meniscal repair,BPTB,concentric 60°/s,concentric 60°/s,nm/kg,0.8,
+Capin 2019,39 (39),18.95 (7.31),25.01 (3.57),SAPP + SAPP + PERT,mixed,isometric 90°,,lsi,"1, 2",
+Carolan 2020,298 (0),24.16 (4.6),NA,Primary ACLR,Mixed,concentric 60°/s,concentric 60°/s,nm/kg,0.8,
+Casp 2021,144 (87),21.95 (9.28),NA,Isolated ACLR + ACLR-MS + ACLR-MR,mixed,concentric 90°/s,concentric 90°/s,nm/kg,0.5,140 (82)
+Chantrelle 2023,330 (95),26.38 (7.07),NA,AKP Positive + AKP negative,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.3, 0.6",
+Chen 2015,55 (29),30.67 (6.5),NA,Acute + Chronic,LARS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"1, 5",
+Chen 2017,50 (0),28 (6),NA,ACLR,mixed,isometric 90°,isometric 90°,%BM,3,57 (0)
+Christensen 2017,260 (118),25.8 (9.1),25.89 (4.89),Femoral nerve block + Adductor canal block,mixed,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s",lsi,0.5,
+Chung 2015a,75 (11),27.9 (8.6),24.7 (2.7),ACL,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,"0.2, 0.5, 1, 2",75 (11)
+Cristiani 2019,4093 (1870),NA,NA,Male + Female,mixed,concentric 90°/s,concentric 90°/s,lsi,0.5,
+Cristiani 2020,160 (45),28.65 (6.1),NA,BPTB Standard + BPTB Accelerated + HT Standard + HT Accelerated,BPTB + HS,concentric 90°/s,concentric 90°/s,lsi,"0.3, 0.5, 0.7, 1, 2",
+Crotty 2022,116 (0),24.3 (6.5),NA,Group 1,mixed,concentric 60°/s,concentric 60°/s,nm/kg,0.8,
+Curran 2020,82 (45),20.19 (6.59),NA,9 Month + 12 months + 18 months + 24 months,Mixed,concentric 60°/s,,lsi,1.3,
+Czamara 2010a,104 (45),28.86 (9.19),NA,Females + Males,HS - ST/G,isometric 70°,isometric 30°,nm,"0.2, 0.4",
+Czamara 2010b,54 (0),25.5 (8.3),NA,ACLR,HS - ST/G,isometric 70°,isometric 30°,nm/kg,"0.2, 0.4",54 (0)
+Czamara 2011b,63 (25),27.03 (7.96),NA,Females,HS - ST/G,concentric 60°/s,concentric 60°/s,nm,"0.3, 0.5",
+Czamara 2018,30 (0),30.23 (9.8),NA,ACLR,HS,"isometric 70°,  concentric 60°/s,  concentric 180°/s","isometric 30° prone,  concentric 60°/s,  concentric 180°/s",nm/kg,0.3,30 (0)
+Czamara 2021,40 (0),25.45 (5.99),NA,ACLR-I + ACLR-II,HS,"isometric 70°,  concentric 60°/s,  concentric 180°/s","isometric 30°,  concentric 60°/s,  concentric 180°/s",nm/kg,"0.2, 0.3, 0.5",20 (ns)
+Dauty 2010,80 (NA),23.79 (1.8),NA,PT retrained + STG retrained + PT control + STG Control,PT + HS - ST/G,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.3, 0.5",
+Dauty 2014,60 (0),NA,NA,Patellar + HS,BPTB + HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.3, 0.5, 1",
+Dauty 2022a,216 (60),24.47 (5.8),NA,Returned to running + No return to running,BPTB,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,0.3,
+Dauty 2022b,539 (155),25 (6.11),NA,Arthrofibrosis + No arthrofibrosis,mixed,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.3, 0.6, 1",
+Dempsey 2019,60 (31),22.4 (9.2),NA,All included,mixed,"isometric 90°,  concentric 90°/s",,nm/kg,0.5,
+Dragicevic 2022,70 (10),27.32 (2.32),NA,Group A + Group B,HS,"concentric 60°/s,  concentric 180°/s",,nm,"0.2, 0.5",
+Drigny 2022,113 (47),25.2 (9.7),NA,Group 1,mixed,concentric 60°/s,concentric 60°/s,nm/kg,"0.3, 0.7",
+Drocco 2017,90 (29),28.6 (9.5),23.25 (2.83),ST3 + GST,HS,"concentric 90°/s,  concentric 240°/s,  concentric 180°/s","concentric 90°/s,  concentric 240°/s,  concentric 180°/s",lsi,1.9,
+Duckett 2021,77 (37),21.9 (7.8),NA,ACLR,mixed,isometric 90°,,nm/kg,0.5,76 (42)
+Ebert 2018,111 (38),27.3 (9.1),25.5 (3.6),Group 1,HS,concentric 90°/s,concentric 90°/s,nm,1,
+Ebert 2019,50 (18),26.3 (9.6),24.8 (4),Group 1,LARS + HS,concentric 90°/s,concentric 90°/s,nm,"1, 2",
+Ebert 2021b,50 (16),28.3 (9.1),24.6 (2.8),Entire cohort,HS,concentric 90°/s,,lsi,0.8,
+Ebert 2022a,136 (47),30.95 (9.94),26.1 (3.09),DB Hams + DB Hams LARS,HS + LARS + HS,concentric 90°/s,concentric 90°/s,lsi,7.8,
+Edwards 2018,113 (38),25.88 (8.14),NA,RTS + No RTS,HS,concentric 90°/s,concentric 90°/s,lsi,1,
+Eiji 2016,97 (36),26.45 Range 14-57,NA,Group I + Group II,HS,concentric 60°/s,concentric 60°/s,lsi,2.4,
+Engelen-VanMelick 2017,97 (46),36.08 (9.9),24.47 (3.62),Men BPTB + Men STG + Women BPTB + Women STG,BPTB + HS - ST/G,"eccentric 60°/s,  concentric 60°/s,  concentric 180°/s","eccentric 60°/s,  concentric 60°/s,  concentric 180°/s",nm,4.5,44 (22)
+Everhart 2020a,508 (289),23.99 (8.2),27.12 (5.57),Grade 0-1 cartilage damage + Grade 2-4 cartilage damage,Mixed,"concentric 60°/s,  concentric 300°/s",,"lsi, NA",0.5,
+Faleide 2021,103 (58),28.7 (10),NA,Group 1,mixed,concentric 60°/s,,lsi,0.8,
+Felix 2022,34 (7),25.05 (6.82),23.62 (2.72),ACL group,not stated,concentric 60°/s,concentric 60°/s,lsi,1,
+Fischer 2017,169 (60),22.35 (8.06),22.61 (2.06),Female + Male,not stated,concentric 60°/s,,nm,0.5,
+Fischer 2018,124 (43),21.6 (7.12),NA,Quadriceps + Hamstrings,QT + HS,concentric 60°/s,concentric 60°/s,nm,"0.5, 0.6",
+Fleming 2013,90 (48),23.51 (2.46),NA,Low tension + High tension,mixed,concentric 60°/s,,lsi,"1, 3",
+Fujita 2011,55 (33),25.15,NA,DB + AM + PL,HS,concentric 60°/s,concentric 60°/s,lsi,2.7,
+Gao 2010,159 (54),30 (7),NA,Group 1,LARS,concentric 60°/s,concentric 60°/s,lsi,4.2,
+Gauthier 2022,303 (91),27 (8),24.3 (4.2),Group 1,mixed,concentric 60°/s,"eccentric 90°/s,  concentric 60°/s",nm/kg,0.7,
+Geoghegan 2007,22 (4),33.19 Range 21-39,NA,BPTB + HS,BPTB + HS,"eccentric 30°/s,  concentric 30°/s",,lsi,0.2,
+Getgood 2020,356 (202),18.85 (3.15),23.34 (5.24),ACLR Alone + ACLR. + Lateral extra-articular tenodesis,HS + HS + LET,concentric 90°/s,concentric 90°/s,lsi,"0.5, 1, 2",
+Gifstad 2013,52 (29),36 Range 20-57,NA,Primary ACLR,mixed,concentric 60°/s,concentric 60°/s,lsi,7.8,
+Gifstad 2014,110 (39),Median 24 Range 18-45,NA,EZLoc + Bone Mulch,HS,concentric 60°/s,concentric 60°/s,lsi,2,
+Goetschius 2015,32 (14),24.1 (4.9),NA,ACLR,not stated,isometric 90°,,nm/kg,3.8,32 (15)
+Goetschius 2016,53 (26),23.4 (4.9),NA,ACLR,not stated,isometric 90°,,nm/kg,3.7,50 (22)
+Goetschius 2019,51 (37),22.92 (4.65),NA,Non-BTPB + BTB,mixed + BPTB,isometric 90°,,nm/kg,4.2,21 (13)
+Gokeler 2017a,52 (14),23.38 (3.69),NA,Male + Female,mixed + HS,concentric 60°/s,concentric 60°/s,nm,0.6,172 (85)
+Goto 2022,73 (73),33.79 (11.44),22.73 (3.46),Group S + Group L,QT,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s",lsi,0.7,
+Grant 2005,145 (60),29.3 (9.68),NA,Home + Physical Therapy,BPTB,concentric 180°/s,concentric 180°/s,lsi,0.2,
+Grant 2010,88 (50),30.53 (10.6),NA,Home + Physical Therapy,BPTB,concentric 60°/s,concentric 60°/s,lsi,3.2,
+Grindem 2014,100 (44),24 (7.2),23.9 (3.3),Surgical,mixed,concentric 60°/s,concentric 60°/s,nm,"0.3, 2",
+Grondin 2022,413 (123),26.21 (6.32),NA,Returned to running + No return to running,HS - ST/G,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,0.3,
+Guney-Deniz 2020,67 (13),26.97 (4.4),24.23 (1.32),Hamstring Tendon + Tibialis Anterior + Quads Tendon,HS + TA + QT,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,1.1,20 (ns)
+Haillotte 2017,53 (13),26.7 (9.7),NA,Group 1,fascia lata,"concentric 90°/s,  concentric 240°/s","concentric 90°/s,  concentric 240°/s",lsi,"0.5, 1",
+Harput 2018,72 (0),28 (7.6),24.2 (4.2),Group 1,HS,"eccentric 90°/s,  concentric 90°/s","eccentric 90°/s,  concentric 90°/s",nm/kg,0.5,
+Harput 2020a,91 (0),28.55 (6.92),24.87 (3.48),BMI <25 + BMI >25,HS,isometric 60°,isometric 60°,"nm, nm/kg","0.2, 0.5",
+Hart 2022,357 (0),25.17 (4.19),NA,BPTB + HT,BPTB + HS,concentric 60°/s,concentric 60°/s,nm/kg,0.8,
+Heijne 2010,68 (32),29.5 (8.02),24.25 (2.64),BPTB + HS,BPTB + HS,"concentric 90°/s,  concentric 230°/s","concentric 90°/s,  concentric 230°/s",lsi,"0.2, 0.4, 0.6, 0.8, 1, 2",
+Heijne 2015,68 (32),29.5 (8.02),24.25 (2.64),BPTB + HS,BPTB + HS,"eccentric 90°/s,  eccentric 230°/s,  concentric 90°/s,  concentric 230°/s","eccentric 90°/s,  eccentric 230°/s,  concentric 90°/s,  concentric 230°/s",lsi,5.1,
+Hogberg 2023,47 (21),25.9 (9.6),24.1 (2.1),12 months,HS,,"ecc nordboard,  concentric 90°/s",lsi,0.6,
+Hsieh 2015,28 (14),19.6 (4.5),NA,ACLR,mixed,concentric 60°/s,,nm/kg,0.2,28 (14)
+Hu 2020,84 (41),33.15 (5.18),27.11 (5.01),ST/G + ST,HS - ST/G + HS - ST,isometric 90° HHD,"isometric 90° HHD,  isometric 60° HHD,  isometric 30° HHD",lsi,3.2,
+Huber 2019,464 (187),30 (10.99),NA,PTG + HTG,BPTB + HS,concentric 120°/s,concentric 120°/s,nm/kg,"0.4, 0.8",
+Hughes 2019a,125 (55),23.12,NA,QT 5-8 + BPTB 5-8 + HS 5-8 + QT 9-15 + BPTB 9-15 + HS 9-15,QT + BPTB + HS,isometric 60°,isometric 60°,lsi,"0.5, 0.9",
+Hunnicutt 2020a,320 (164),18.1 (3.1),23.8 (3.7),All,QT,concentric 60°/s,concentric 60°/s,nm/kg,"0.2, 0.5",
+Hunnicutt 2021,320 (164),18.1 (3.1),23.8 (3.7),Total,QT,concentric 60°/s,concentric 60°/s,nm/kg,"0.2, 0.5",
+Inagaki 2013,120 (52),27.22 (11.14),NA,Group I + Group II,HS,concentric 60°/s,concentric 60°/s,lsi,2,
+Iriuchishima 2012,135 (NA),NA,NA,SB + DB,HS - Single bundle + HS - Double Bundle,concentric 60°/s,,lsi,"0.2, 0.5, 0.8",
+Ivarsson 2022,72 (37),25.8 (5.4),24.9 (4),Group 1,mixed,"isometric 90° HHD,  concentric 60°/s","isometric 90° HHD,  concentric 90°/s","n/kg, nm/kg",1,
+Iwame 2020,101 (47),25.1 (11.1),23.3 (3.4),Group 1,HS - ST/G or ST,concentric 60°/s,,lsi,0.5,
+Iwame 2021,83 (47),26.6 (12.4),23.8 (4),Group 1,HS,concentric 60°/s,,nm/kg,0.2,
+Jang 2014,67 (0),21.88 (3.86),24.47 (2.66),RTS + No RTS,HS,concentric 60°/s,concentric 60°/s,lsi,2.8,
+Jeon 2022,76 (11),28.6 (12),24.6 (3.3),Group 1,mixed,concentric 60°/s,concentric 60°/s,lsi,"0.5, 1",
+Jeong-Ku 2016,96 (16),24.95,NA,Single + Double,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,2,
+Jiang 2012,52 (13),25.38 Range 17-42,NA,Double Bundle Group + Single Bundle Group,BPTB,"concentric 60°/s,  concentric 120°/s","concentric 60°/s,  concentric 120°/s",lsi,4.4,
+Jiang 2021,72 (14),32.22 (11.35),23.55 (2.94),AR + NAR,HS - ST/G,"isometric 90°,  concentric 60°/s,  concentric 180°/s","isometric 90°,  concentric 60°/s,  concentric 180°/s",lsi,"0.2, 0.5, 1",
+Johnson 2018,67 (24),21.34 (5.73),NA,ACLR,BPTB,"isometric 90°,  concentric 90°/s",,nm/kg,0.6,10 (4)
+Johnston 2022,105 (23),20 (8.64),NA,Quadriceps tendon + Hamstring Tendon,QT + HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm,"0.5, 1",
+Joseph 2020,87 (30),29.69 (10.56),23.74 (2.61),Lemaire Group + Reference,HT + LET + HT,"concentric 90°/s,  concentric 240°/s","eccentric 30°/s,  concentric 90°/s,  concentric 240°/s",lsi,0.5,
+Kanamoto 2015,57 (35),24.7 Range 13-51,NA,Group 1,HS,concentric 60°/s,concentric 60°/s,lsi,0.5,
+Karanikas 2004,69 (NA),30.19 (7.57),NA,3-6 months post op + 6-12 month post op + 12-24 month,mixed,concentric 60°/s,concentric 60°/s,nm,0.8,
+Karanikas 2005,21 (NA),31 (9),NA,Surgical,mixed,"isometric 45°,  isometric 0°,  concentric 60°/s","isometric 0°,  concentric 60°/s",nm,0.9,
+Karimi-Mobarakeh 2015,119 (21),29.26 (8.03),24.17 (3.74),ST/G + ST,HS - ST/G + HS - ST,,isometric 90° HHD,lsi,1,
+Keays 2022,56 (17),33,NA,Reconstructed group,mixed,concentric 60°/s,concentric 60°/s,lsi,9.9,
+Kew 2020,169 (89),22.54 (9.93),NA,Femoral nerve block (Femoral + Fem&Sciatic) + No femoral block (Sciatic+saphenous & saphenous),mixed,concentric 90°/s,,lsi,0.5,
+Kilinc 2016,55 (NA),28.18 (6.21),NA,Transtibial + Anatomic,HS,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s",nm,1.9,
+Kim 2011,73 (0),28.38 (8.53),NA,Hamstring autograft + Allograft,HS + HS Allograft,concentric 60°/s,"concentric 90°/s hyperflex,  concentric 60°/s",nm,2.7,
+Kim 2015a,80 (0),NA,NA,PEG + NPEG,not stated,"concentric 60°/s,  concentric 180°/s",,lsi,0.2,
+Kim 2015b,70 (35),28.95 (10.95),NA,Female + Male,not stated,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,1,
+Kim 2020,20 (4),23.2 (1.1),24.1 (0.8),ACLR,mixed,isometric 90°,,nm/kg,2.6,30 (8)
+Kim 2022,75 (0),Median 31.5 IQR 24.0-37.0,Median 25.3 IQR 23.6-26.8,Q1 + Q2 + Q3,HS - ST/G,concentric 60°/s,concentric 60°/s,lsi,1,
+Kim 2023,61 (15),26.9 (9.8),24.4 (3.3),Group 1,HS - ST/G,concentric 60°/s,concentric 60°/s,lsi,"0.5, 1",
+King 2021,115 (0),21.61 (4.09),NA,Contralateral injury + No Contralateral injury,mixed,concentric 60°/s,concentric 60°/s,n/kg,0.8,
+Kline 2018,20 (11),22.8 Range 15-45,NA,ACLR,mixed,isometric 90° HHD,,n/kg,0.7,45 (22)
+Koga 2014,137 (81),24.37 Range 14-48,NA,Control + Notchplasty,HS,concentric 60°/s,concentric 60°/s,lsi,"0.2, 0.5, 0.8, 1, 2",
+Koga 2015a,53 (30),24.53 Range 14-44,NA,SB + DB,HS,concentric 60°/s,concentric 60°/s,lsi,5.8,
+Koga 2015b,75 (29),24.45 Range 14-52,NA,P0 + P20 + P45,HS,concentric 60°/s,concentric 60°/s,lsi,2,
+Konishi 2010,52 (25),21.1 (5.3),NA,Patient at 12 months,HS - ST,"concentric 60°/s,  concentric 180°/s",,nm,1,35 (10)
+Kouloumentas 2019,90 (35),28.65 (11.19),25.2 (2.72),Group A + Group B,HS - ST4 + HS - ST/G,"isometric 90°,  concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,2,
+Koutras 2013,51 (0),23.9 (5.67),NA,Anteromedial + Transtibial,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.2, 0.5",
+Kovalak 2018,43 (0),32.56 (4.89),25.19 (3.22),Group A ACLR,HS,concentric 60°/s,concentric 60°/s,nm,8.2,
+Krolikowska 2019,143 (0),29.33 (8.12),NA,Group I + Group II,HS,,concentric 180°/s,nm/kg,0.6,98 (0)
+Kuenze 2013,26 (13),24.2 (4.9),24.2 (2.4),ACLR,mixed,isometric 60°,,nm/kg,3.7,26 (13)
+Kuenze 2019a,60 (31),19.72 Range 13.0-36.0,NA,Men + Women,mixed,isometric 90°,,nm/kg,0.6,
+Kuenze 2019b,308 (162),20.87 (4.73),NA,Male + Female,mixed,isometric 90°,,nm/kg,1.1,
+Kwak 2018,90 (14),34.5 (12.73),25.25 (4.23),Allograft + Autograft,BPTB + BPTB Autograft,"concentric 60°/s,  concentric 180°/s",,lsi,"0.5, 1, 2",
+KyoungHo 2017,73 (0),30.67 (9.81),25.05 (3.15),Group 1,mixed,concentric 60°/s,concentric 60°/s,lsi,"0.2, 0.5, 1",
+Kyritsis 2016,158 (0),21.16 (4.18),NA,No graft rupture + Graft rupture,mixed,"concentric 60°/s,  concentric 300°/s,  concentric 180°/s","concentric 60°/s,  concentric 300°/s,  concentric 180°/s",nm/bm (%),0.7,
+Kyung 2015,144 (0),29.35 (11.4),NA,ST + ST/G,HS - ST + HS - ST/G,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,2.2,
+Labanca 2016,58 (5),22 (6),NA,Group 1,BPTB,"isometric 90°,  isometric 30°",isometric 90°,lsi,0.2,
+Labanca 2018,63 (0),22.1 (3.79),NA,NMES+STSTS + STSTS + NAT,BPTB,"isometric 90°,  isometric 30°",isometric 90°,lsi,"0.2, 0.5",
+Landes 2010,40 (19),Median 27 Range 18-45,NA,Group 1 + Group 2,HS ST/G + TA,,isometric 90° HHD,nm,2.2,20 (7)
+Laudner 2015,26 (11),18.7 (3.5),NA,ACLR,BPTB,"concentric 300°/s,  concentric 180°/s","concentric 300°/s,  concentric 180°/s",nm/kg (%),0.6,26 (11)
+Leal-Blanquet 2011,51 (NA),26.99 (8.36),24.67 (2.87),BPTBAu + BPTB Allograft + HT Autograft,BPTB + BPTB Allograft + HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,2.8,
+Lee 2016,96 (8),30.5 Range 17-58,24.95 (2.95),HS + Quadriceps,HS - DB + QT,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"1, 2",
+Lee 2018b,92 (7),30.33 (9.45),24.52 (3.19),PFOA + No PFOA,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,3.2,
+Lee 2019,120 (8),27.15 (6.93),NA,S group + D group,HS - ST/G Single + HS - ST/G Dual,concentric 60°/s,"concentric 60°/s - deep,  concentric 60°/s",nm,3.1,
+Lee 2020,54 (11),25.9 (9.4),23.6 (3.7),Group 1,HS - Single bundle,concentric 60°/s,,lsi,2,
+Lee 2021,139 (20),30 (6.5),25.1 (4.1),Group 1,QTPB,"concentric 60°/s,  concentric 180°/s",,lsi,"1, 2, 3, 4, 5",
+Leister 2019,46 (26),34.67 (11.03),24.57 (3.09),IB + AI,ACL repair - IB + HS,,isometric 90°,lsi,1.1,
+Lentz 2015,73 (28),23.23 (9.74),NA,YRTS + NRTS-Other + NRTS-Fear/Confidence,mixed,concentric 60°/s,,ftlbs/lbs,"0.5, 1",
+Lepley 2014,29 (20),21.2 (3.7),NA,ACLR,mixed,isometric 90°,,nm/kg,4,29 (20)
+Lepley 2016,54 (31),19.9 (5.1),NA,Group 1,BPTB,isometric 90°,,nm/kg,0.6,
+Li 2022,57 (23),33.42 (12.04),23.47 (3.02),Water-based training + Land-based training,not stated,"concentric 60°/s,  concentric 30°/s","concentric 60°/s,  concentric 30°/s",nm/kg,"0.2, 0.3",
+Logerstedt 2013,83 (28),26.8 (11.2),25.7 (4.8),Group 1,mixed,isometric 90°,,nm/bmi,"0.5, 1",
+Manchado 2022,44 (0),31.3 (8.56),NA,ST + ST-G,HS - ST + HS - ST/G,isometric 60° HHD,isometric 30° prone HHD,lsi,5,
+Mariani 2019,59 (0),23.69 (0.71),NA,Group 1,BPTB,isometric 90°,isometric 90°,lsi,0.2,
+Marigi 2022,344 (157),26.09 (10.71),NA,No SACL + SACL,mixed,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",%BW,0.5,
+Markstrom 2023,47 (29),24.6 (4.7),23.7 (2.5),ACLR,HS,isometric 65°,isometric 65°,nm/kg,1.1,46 (40)
+Menzer 2017,88 (39),19.4 (3.7),NA,Group 1,mixed,"isometric 90°,  concentric 90°/s,  concentric 180°/s","isometric 90°,  concentric 90°/s,  concentric 180°/s",nm/kg,0.6,
+Mesnard 2022,94 (53),30.7 (10.04),23.59 (3.11),Hamstrings + Hamstrings + Meniscal,HS,"concentric 60°/s,  concentric 240°/s","eccentric 30°/s,  concentric 60°/s,  concentric 240°/s",nm/kg,0.6,
+Miles 2019,44 (0),24.75 (4.56),NA,BPTB + HT,BPTB + HS,concentric 60°/s,concentric 60°/s,nm/kg,0.8,22 (ns)
+Mitomo 2023,50 (28),20 (12.3),23.1 (3),Group 1,HS,concentric 60°/s,,nm/kg,"0.2, 0.5",
+Moran 2022a,144 (75),21.6 (8.1),25.4 (4.4),Group 1,mixed,concentric 90°/s,concentric 90°/s,nm/kg,"0.5, 0.8",
+Moran 2022b,284 (157),21.6 (9.5),24.8 (4.6),Overall,mixed,concentric 90°/s,concentric 90°/s,nm/kg,0.5,
+Murakami 2023,78 (30),32.56 (8.04),NA,R group + N group,mixed,concentric 60°/s,,lsi,"0.4, 0.7, 1",
+Murray 2019b,62 (36),19.4 (5.1),24.7 (3.8),Group 1,BEAR,isometric 90°,isometric 90°,lsi,0.2,
+Myklebust 2017,80 (80),23.25 (4.13),23.42 (0.53),ACL group,not stated,concentric 60°/s,concentric 60°/s,nm/kg,3.5,778 (778)
+Nakanishi 2020,56 (29),23 (1.9),NA,20-25 years old,HS - Double bundle,concentric 60°/s,,lsi,3.3,
+Nakase 2012,224 (174),NA,NA,Future contralateral ACLR + No future ACLR,HS - ST/G,concentric 180°/s,concentric 180°/s,lsi,0.5,
+Nakayama 2013,51 (24),25.66 Range 14-45,NA,Tourniquet group + No tourniquet group,HS,concentric 60°/s,concentric 60°/s,lsi,0.2,
+Nicholas 2001,48 (19),32.52 (7.95),NA,Tourniquet + No tourniquet,PT,concentric 60°/s,,lsi,0.5,
+Niki 2011,144 (80),29 Range 14-46,NA,BPTB-G + ST + ST-G,BPTB-Gracilis + HS - ST + HS - ST/G,concentric 60°/s,,lsi,0.2,
+Niki 2012,162 (76),28.93,NA,Anterior Knee Pain + No Anterior Knee Pain,mixed,concentric 60°/s,,lsi,2,
+Nishio 2018,56 (25),28 Range 20-39,23 (3),Group Y,HS,concentric 60°/s,concentric 60°/s,lsi,2,
+Norte 2018,64 (34),23.62 (6.19),NA,Early + Late,mixed,isometric 90°,,nm/kg,3.7,30 (18)
+Norte 2019a,72 (40),26 (9.3),NA,ACLR,mixed,"isometric 90°,  concentric 90°/s,  concentric 180°/s",,nm/kg,3.9,30 (18)
+Norte 2019b,77 (35),21.55 (7.77),NA,High Physical Activity + Low Physical Activity,mixed,"isometric 90°,  concentric 90°/s","isometric 90°,  concentric 90°/s",nm/kg,0.5,
+Norte 2020,80 (38),21.7 (7.8),NA,ACLR,mixed,"isometric 90°,  concentric 90°/s","isometric 90°,  concentric 90°/s",nm/kg,0.5,80 (43)
+Novaretti 2018,58 (11),34.5 (11.3),NA,Group 1,not stated,concentric 60°/s,concentric 60°/s,nm,0.5,
+O'Connor 2020,452 (0),25.5 (6.1),NA,Group 1,mixed,concentric 60°/s,concentric 60°/s,nm/kg,0.7,
+O'Malley 2018,118 (0),23.6 (5.8),NA,ACLR,BPTB,concentric 60°/s,concentric 60°/s,%BM,0.5,44 (0)
+Ohji 2021,73 (31),21 (6),22.5 (3.8),All,mixed,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,1.1,
+Ohsawa 2021,96 (39),24.75 (10.85),NA,NR + R,mixed,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",%BM,0.5,
+Palmieri-Smith 2015,66 (50),20.85 (5.99),NA,High Quadriceps + Moderate Quadriceps + Low Quadriceps,PT,concentric 60°/s,,lsi,0.6,
+Pamukoff 2018,38 (27),21.9 (2.4),23.9 (3.8),ACLR,mixed,"isometric 45°,  concentric 60°/s,  concentric 240°/s,  concentric 120°/s",,nm/kg,4,38 (27)
+Park 2015,50 (14),30.81 (10.79),24.95 (4.14),Isolated ACL Tear + Combined ACL Tear,not stated,concentric 60°/s,concentric 60°/s,nm/kg,0.5,
+Pietrosimone 2015,28 (19),21.28 (3.79),NA,ACLR,mixed,isometric 90°,,nm/kg,4,29 (20)
+Pietrosimone 2016,96 (62),21.7 (3.85),NA,Group 1,mixed,isometric 90°,,nm/kg,3.1,
+Piussi 2020,328 (208),26.04 (9.86),23.32 (2.81),Male + Female,Mixed + mixed,concentric 90°/s,concentric 90°/s,lsi,1,
+Piussi 2022,144 (76),22.98 (4.48),23.12 (4.17),ACL Re-ruptures + ACL Reconstruction,mixed,concentric 90°/s,concentric 90°/s,lsi,"0.2, 0.3, 0.7, 1",
+Plocki 2022,51 (13),34.4 (7.2),NA,Group 1,HS - ST/G,concentric 60°/s,concentric 60°/s,nm/kg,4,
+Powers 2022,79 (55),22.9 (11.5),NA,Group 1,mixed,isometric 60°,,nm/kg,0.5,
+Pua 2017,106 (23),26 (8),24.2 (3.4),Group 1,mixed,concentric 60°/s,concentric 60°/s,nm,0.2,
+Rahova 2022,20 (0),25.4 (5.32),23.47 (1.2),ACL group,not stated,HHD,HHD,NA,0.5,20 (0)
+Raoul 2018,182 (50),28.7 (8.6),23.5 (3.3),Group 1,mixed,"concentric 60°/s,  concentric 240°/s",eccentric 30°/s,lsi,0.5,
+Raoul 2019,234 (61),28.4 (8.6),23.6 (3.3),Group 1,mixed,"concentric 60°/s,  concentric 240°/s",eccentric 30°/s,lsi,0.5,
+Read 2021,65 (0),24.7,NA,Group 1,mixed,concentric 60°/s,concentric 60°/s,nm/kg,0.4,
+Rhim 2020,32 (20),30 (7),22 (2),ACLR,HS,concentric 180°/s,concentric 180°/s,nm/kg,1,32 (17)
+Riesterer 2020,80 (26),29 (9),NA,Group 1,HS - ST ,concentric 60°/s,concentric 60°/s,"nm/kg, NA",0.5,
+Roger 2020,60 (11),30.42 (8.65),24.25 (2.91),4ST + ST/G,HS - ST + HS - ST/G,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s","lsi, NA","0.5, 2",
+Runner 2018,73 (42),24.67 (1.8),24.18 (1.05),Adductor Canal Block + Femoral nerve block,mixed,"concentric 60°/s,  concentric 180°/s",,lsi,"0.2, 0.5",
+SanJose 2023,89 (38),Median 21 IQR 18-25,NA,Group 1,HS,"isometric 45°,  concentric 60°/s,  concentric 180°/s","isometric 45°,  concentric 60°/s,  concentric 180°/s",lsi,"0.3, 0.8",
+Sasaki 2016,136 (71),27.59 (12.22),23.15 (3.14),DB-HT + RTSB-PT,HS + BPTB,concentric 60°/s,concentric 60°/s,lsi,"0.2, 0.5, 0.8, 1, 2",
+Schwery 2022,125 (74),NA,NA,Male + Female,mixed,isometric 90°,,nm/kg,"0.3, 0.5, 0.8",
+Sengoku 2022,82 (40),20.65 (8.19),22.4 (3.14),ST Group + STG Group,HS - ST + HS - ST/G,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",lsi,"0.2, 0.5",
+Severyns 2022,104 (35),26.1 (8.79),23.36 (3.82),Without ACL retear + With ACLR retear,HS,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",NA,0.5,
+Shelbourne 2015,58 (38),24.8 (9.5),NA,Ispilateral BPTB,BPTB,concentric 180°/s,,lsi,2,
+Sherman 2020,111 (51),18 (5),NA,IKDC Not Met,mixed,concentric 60°/s,concentric 60°/s,lsi,0.5,
+Shibata 2019,386 (181),23.7 (9.5),22.6 (3.3),All,HS,concentric 60°/s,,nm/kg,0.5,
+Siney 2010,80 (25),29.56 (7.48),NA,All,mixed,"concentric 90°/s,  concentric 60°/s,  concentric 180°/s","concentric 90°/s,  concentric 60°/s,  concentric 180°/s",lsi,0.5,
+Sipka 2019,65 (21),28.5 (8.1),NA,Group 1,Not stated,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s",nm,0.5,
+Slater 2022,42 (29),20.21 (3.29),NA,ACLR,mixed,"isometric 90°,  concentric 180°/s",,nm/kg,1.8,38 (24)
+Straub 2022,434 (303),18.6 (4.4),23 (2.8),Total,mixed,isometric 60°,,lsi,0.5,
+Stropnik 2020,60 (19),31.81 (11.63),25.73 (3.78),Normal IKDC + Sub-normal IKDC,HS,"concentric 60°/s,  concentric 240°/s","concentric 60°/s,  concentric 240°/s",nm/kg,0.5,
+Suh 2021,100 (28),29.21 (9.06),24.35 (3.72),Dominant + Non-dominant,HS,concentric 180°/s,concentric 180°/s,nm/kg,"0.5, 1",
+Sullivan 2022,18 (8),20.89 (6.35),NA,Male + Female,not stated,"isometric 30° HHD,  concentric 60°/s","isometric 30° HHD prone,  concentric 60°/s","%BM, nm/kg",0.9,
+Suzuki 2022,78 (42),22.9 (10.2),NA,Group 1,HS,"isometric 90°,  concentric 60°/s","isometric 90°,  concentric 60°/s",lsi,"0.2, 0.8",
+Tajima 2020,75 (5),23.9 (8.03),25.59 (4.85),BPTB-G + ST-G,BPTB-G + HS - ST/G,concentric 60°/s,concentric 60°/s,"nm, lsi",1,
+Telianidis 2014,28 (9),27 (5),25 (3),ACLR,HS,isometric 60°,isometric 60°,nm,1.4,29 (14)
+Thomas 2013,15 (7),20.27 (5.38),NA,ACL,BPTB,concentric 60°/s,concentric 60°/s,nm/kg,0.6,15 (8)
+Thompson 2022,299 (153),NA,NA,Men + Women,mixed,"concentric 90°/s,  concentric 180°/s",,lsi,0.6,
+Tourville 2014,38 (20),28 (11.84),25 (3.76),ACLR,mixed,"concentric 60°/s,  concentric 300°/s,  concentric 180°/s","concentric 60°/s,  concentric 300°/s,  concentric 180°/s",lsi,3.8,
+Tugcu 2013,58 (0),26.63 Range 19-34,NA,Group 1,BPTB,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm,0.2,
+Tyler 2004,60 (27),36.58 (1.46),NA,Creatine + Placebo,BPTB,concentric 60°/s,concentric 60°/s,nm/kg,"0.2, 0.5",
+Ueda 2017,193 (87),21 (6.8),NA,Group 1,HS,concentric 60°/s,,lsi,0.5,
+Ueda 2021,97 (46),21.7 (8.5),22.2 (2.9),Group 1,HS,concentric 60°/s,concentric 60°/s,lsi,1,
+Ueda 2022,144 (62),25.8 (11.9),22.6 (3),All patients,mixed,concentric 60°/s,concentric 60°/s,lsi,1,
+Urabe 2002,44 (20),32.7 Range 16-47,NA,Group 1,HS - ST,"concentric 60°/s,  concentric 180°/s","concentric 60°/s,  concentric 180°/s",nm/kg,"0.2, 0.5, 0.8, 1",
+Walaszek 2022,173 (100),18.78 (3.51),24.66 (4.57),Both strong and symmetrical + Strong only + Symmetrical Only + Neither strong nor symmetrical,mixed,isometric 90°,,nm/kg,0.5,
+Wang 2015a,88 (27),27.34 Range 16-42,NA,More than 20% deficit + Less than 20% deficit,HS,concentric 60°/s,concentric 60°/s,lsi,2,
+Welling 2018a,65 (20),24.6 (7.05),NA,Males + Females,mixed,concentric 60°/s,concentric 60°/s,nm/kg,0.5,
+Welling 2018b,62 (17),24.2 (6.2),NA,Group 1,mixed,"concentric 60°/s,  concentric 300°/s,  concentric 180°/s","concentric 60°/s,  concentric 300°/s,  concentric 180°/s",nm,"0.5, 0.8",
+Welling 2019,38 (0),24.2 (4.7),NA,ACLR,mixed,concentric 60°/s,concentric 60°/s,"nm/kg, nm","0.3, 0.5, 0.8",30 (0)
+Welling 2020,64 (20),27.78 (8.81),NA,RTS + No RTS,mixed,"concentric 60°/s,  concentric 300°/s,  concentric 180°/s","concentric 60°/s,  concentric 300°/s,  concentric 180°/s",nm,0.8,
+Wellsandt 2018b,83 (27),NA,26.6 (4.3),Operative,mixed,isometric 90°,,lsi,5.3,
+Wenning 2023,438 (127),NA,Median 24.1 IQR 3.9,GA + GA + pFNB + Spinal + Spinal + pFNB,HS,concentric 60°/s,concentric 60°/s,nm/kg,0.5,
+Wipfler 2011,54 (21),NA,NA,BPT + HT,BPTB + HS,concentric 60°/s,concentric 60°/s,lsi,"1, 8.8",
+Wongcharoenwatana 2019,60 (7),29.6,NA,Group 1,not stated,"isometric 90° HHD prone,  isometric 90° HHD",,lsi,0.9,
+Yoo 2017,132 (12),27.09,NA,Autograft + Allograft,HS + TA Allograft,concentric 180°/s,concentric 180°/s,lsi,2.8,
+Yuya 2020,420 (198),23.07 (8.85),22.35 (2.98),Excellent pre QSI + Good pre QSI + Moderate pre QSI + Poor pre QSI,HS,concentric 60°/s,,lsi,"0.2, 0.5, 1",
+Zhi-Cheng 2018,118 (40),25.66 (5.18),24.16 (3.28),Group 1,HS,concentric 60°/s,concentric 60°/s,nm/kg,"0.2, 0.5, 0.8, 1",
+Zore 2021,63 (26),34.7 (12.3),24.9 (4.4),All,HS,concentric 60°/s,concentric 90°/s,nm,0.5,
+Zumstein 2022,100 (34),30.4 (9.47),NA,Dominant group + Non-dominant group,HS,concentric 60°/s,concentric 60°/s,lsi,0.8,
+deSouzaBorges 2022,44 (0),26.3 (6.2),25 (4),Ipsilateral,PT - Ipsilateral,concentric 60°/s,,nm,0.3,

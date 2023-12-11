@@ -1,0 +1,489 @@
+---
+title: "Graft Sensitivity Analysis"
+author: "Mick Girdwood"
+date: '`r format(Sys.time(), "%d %B, %Y")`'
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE, error = FALSE)
+
+black <- "#000000"
+orange <- "#E69F00"
+lightblue <- "#56B4E9"
+green <- "#009E73"
+yellow <- "#F0E442"
+blue <- "#0072B2"
+red <- "#D55E00"
+pink <- "#CC79A7"
+
+library(tidyverse)
+library(metafor)
+library(clubSandwich)
+library(rms)
+library(mgfunctions)
+library(kableExtra)
+
+
+## Function for graft plots
+
+
+pointsfunction <- function(data){
+  data %>%
+    select(ci.ub, x) %>% 
+    bind_rows(., data %>% 
+                select(ci.lb, x) %>% 
+                rename(ci.ub = ci.lb) %>% 
+                arrange(desc(x)))
+}
+
+graft_plot <- function(model, graft = "quad"){
+  
+  name <- if (graft == "quad") {
+    "Extensor"
+  } else if (graft == "hs") {
+    "Flexor"
+  } else {
+    "name"
+  }
+  
+  knot_pos <- NULL # set to 0 for logic to work later
+  
+  moderator <- as.character(model$call$mods[2]) # get the moderator variable
+  data <- model$data # get the data
+  
+  last_timepoint <- data %>% filter(!is.na(vi)) %>% summarise(round(max(timepoint_mean),0)) %>% as.numeric
+  last_timepoint_1 <- data %>% filter(!is.na(vi), graft_group2 != "other") %>% summarise(round(max(timepoint_mean),0)) %>% as.numeric
+  last_timepoint_2 <- data %>% filter(!is.na(vi), graft_group2 == "other") %>% summarise(round(max(timepoint_mean),0)) %>% as.numeric
+  
+  if (str_detect(moderator, "rcs")) { # if a rcs is used, extract the information
+    spline <- as.list(model$formula.mods[[2]][[3]][[3]]) 
+    knot_pos <- unlist(spline[sapply(spline, is.numeric)]) # this gets the vector of knot positions or no. of knots
+    
+  }
+  
+  if (str_detect(moderator, "\\*")) {
+  
+  # depending on the type od moderator (i.e. log, linear, rcs...) calculate the predicted curve points
+  mod_type <- if (str_detect(moderator, "log")) {
+    
+    #log
+    line1 <- data.frame(predict(model, 
+                                newmods = cbind(rep(0, 100), log(seq(1,100, length = 100)), rep(0, 100)), 
+                                transf = exp)) %>% mutate(x = row_number())
+    
+    line2 <- data.frame(predict(model, 
+                                newmods = cbind(rep(1, 100), log(seq(1,100, length = 100)), rep(1, 100)*log(seq(1,100, length = 100))), 
+                                transf = exp)) %>% mutate(x = row_number())
+    
+    
+  }  else if (length(knot_pos) == 3) {
+    
+    # 3 knot rcs
+    line1 <- data.frame(predict(model, newmods = 
+                                  matrix(c(rep(0, 100), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)*0),
+                                         nrow = 100, 
+                                         ncol = 5), transf = exp)) %>% mutate(x = row_number())
+    line2 <- data.frame(predict(model, newmods = 
+                                  matrix(c(rep(1, 100), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)*1),
+                                         nrow = 100, 
+                                         ncol = 5), transf = exp)) %>% mutate(x = row_number())
+    
+    
+  } else if (length(knot_pos) == 4) {
+    
+    # 4 knot rcs
+    line1 <- data.frame(predict(model, newmods = 
+                                  matrix(c(rep(0, 100), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)*0),
+                                         nrow = 100, 
+                                         ncol = 7), transf = exp)) %>% mutate(x = row_number())
+    line2 <- data.frame(predict(model, newmods = 
+                                  matrix(c(rep(1, 100), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE), 
+                                           rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)*1),
+                                         nrow = 100, 
+                                         ncol = 7), transf = exp)) %>% mutate(x = row_number())
+    
+  }
+  } else {
+    
+    
+    # depending on the type od moderator (i.e. log, linear, rcs...) calculate the predicted curve points
+    mod_type <- if (str_detect(moderator, "log")) {
+      
+      #log
+      line1 <- data.frame(predict(model, 
+                                  newmods = cbind(rep(0, 100), log(seq(1,100, length = 100))), 
+                                  transf = exp)) %>% mutate(x = row_number())
+      
+      line2 <- data.frame(predict(model, 
+                                  newmods = cbind(rep(1, 100), log(seq(1,100, length = 100))), 
+                                  transf = exp)) %>% mutate(x = row_number())
+      
+      
+    }  else if (length(knot_pos) == 3) {
+      
+      # 3 knot rcs
+      line1 <- data.frame(predict(model, newmods = 
+                                    matrix(c(rep(0, 100), 
+                                             rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)),
+                                           nrow = 100, 
+                                           ncol = 3), transf = exp)) %>% mutate(x = row_number())
+      line2 <- data.frame(predict(model, newmods = 
+                                    matrix(c(rep(1, 100), 
+                                             rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)),
+                                           nrow = 100, 
+                                           ncol = 3), transf = exp)) %>% mutate(x = row_number())
+      
+      
+    } else if (length(knot_pos) == 4) {
+      
+      # 4 knot rcs
+      line1 <- data.frame(predict(model, newmods = 
+                                    matrix(c(rep(0, 100), 
+                                             rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)),
+                                           nrow = 100, 
+                                           ncol = 4), transf = exp)) %>% mutate(x = row_number())
+      line2 <- data.frame(predict(model, newmods = 
+                                    matrix(c(rep(1, 100), 
+                                             rcspline.eval(seq(1, 100, length = 100), knot_pos, inclx = TRUE)),
+                                           nrow = 100, 
+                                           ncol = 4), transf = exp)) %>% mutate(x = row_number())
+    }
+  }
+  
+  # calculate ci points
+  ci1 <-  pointsfunction(line1)
+  ci2 <-  pointsfunction(line2)
+  
+  ci1 <- ci1 %>% filter(x < last_timepoint_1 + 6)
+  ci2 <- ci2 %>% filter(x < last_timepoint_1 + 6)
+  line1 <- line1 %>% filter(x < last_timepoint_1 + 6)
+  line2 <- line2 %>% filter(x < last_timepoint_2 + 6)
+  
+  plot <- data %>%
+    ggplot(aes(x = timepoint_mean, y = exp(yi), group = interaction(cohort, graft_group2), colour = graft_group2)) +
+    geom_point(aes(size = acl_n), alpha = 0.1) + 
+    geom_line(alpha = 0.1) + 
+    scale_y_continuous(breaks = c(0.6, 0.8, 1.0, 1.2), labels = c("-40%", "-20%", "0%", "+20%")) +
+    scale_colour_manual(values = c("red", "blue"), labels = c(name, "Other"), name = "Graft") +
+    #scale_y_continuous(labels = scales::percent, limits = c(-0.75, 0.25)) +
+    #scale_x_continuous(trans = 'log10', limits = c(3,150)) +
+    coord_cartesian(xlim = c(0,100), ylim = c(0.5, 1.2)) +
+    scale_size(range = c(0, 10)) +
+    labs(x = "Time since surgery (Months)", y = "Percentage Deficit", colour = "Measure", size = "Participants (n)") +
+    #geom_smooth(aes(x = timepoint_mean, y = yi), method = "lm", colour = "green", inherit.aes = FALSE) +
+    #geom_abline(intercept = -0.2198, slope = 0.0014, colour = "red") +
+    geom_line(data = line1, aes(x = x, y = pred), colour = "red", linewidth = 1.3, inherit.aes = FALSE) +
+    geom_line(data = line2, aes(x = x, y = pred), colour = "blue", linewidth = 1.3, inherit.aes = FALSE) +
+    geom_polygon(data = ci1, aes(x = x, y = ci.ub), fill = "red",  alpha = 0.1, inherit.aes = FALSE) +
+    geom_polygon(data = ci2, aes(x = x, y = ci.ub), fill = "blue",  alpha = 0.1, inherit.aes = FALSE) +
+    theme_mgpub()
+  
+  return(plot)
+  
+}
+
+notsplit_within_data <- read_csv("data/processed/graft_within.csv")
+
+#### Quad Within ####
+# Data for Quads
+quad_graft <- notsplit_within_data %>%
+  filter(!study %in% c("Shelbourne 2022", "deSouzaBorges 2022", "Oliveira 2022")) %>%
+  filter(str_detect(measure, "quad")) %>%
+  filter(timepoint_mean >0.2,
+         timepoint_mean <120, # no pre-operative data
+         graft_group != "mixed") %>% # no mixed cohorts, only clear graft comparisons
+  mutate(es_id = row_number()) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90") ~ "Slow Isokinetic"
+  )) %>%
+  mutate(graft_group2 = case_when(
+    graft_group == "quad" ~ "quad",
+    TRUE ~ "other"
+  )) %>%
+  mutate(graft_group2 = factor(graft_group2, levels = c("quad", "other"))) %>%
+  filter(!is.na(measure_2)) 
+
+slowquad_graft <- quad_graft %>%
+  filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Li 2022" & measure == "quad isk con 30"),
+         !(cohort == "Siney 2010" & measure == "quad isk con 90"),
+         !(cohort == "McRae 2013"))
+
+fastquad_graft <- quad_graft %>%
+  filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Bailey 2019" & measure == "quad isk con 300"),
+         !(cohort == "Drocco 2017" & measure == "quad isk con 240"),
+         !(cohort == "Laudner 2015" & measure == "quad isk con 300"),
+         !(cohort == "McRae 2013" & graft_group == "other")) 
+
+isoquad_graft <- quad_graft %>%
+  filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Karanikas 2005" & measure == "quad mvic 0"),
+         !(cohort == "Labanca 2018" & measure == "quad mvic 30"),
+         !(cohort == "Labanca 2016" & measure == "quad mvic 30"),
+         !(cohort == "Wongcharoenwatana 2019" & measure == "quad mvic 90 hhd prone"))
+
+
+#### Hamstrings Within ####
+# Data for Hami
+hs_graft <- notsplit_within_data %>%
+  filter(str_detect(measure, "hs")) %>%
+  filter(timepoint_mean >0.2,
+         timepoint_mean <120, # no pre-operative data
+         graft_group != "mixed") %>% # no mixed cohorts, only clear graft comparisons
+  mutate(es_id = row_number()) %>%
+  mutate(measure_2 = case_when(
+    str_detect(measure, "mvic|hhd") ~ "Isometric",
+    str_detect(measure, "isk con 180|isk con 230|isk con 240|isk con 300") ~ "Fast Isokinetic",
+    str_detect(measure, "isk con 30|isk con 60|isk con 90") ~ "Slow Isokinetic"
+  )) %>%
+  mutate(graft_group2 = case_when(
+    graft_group == "hs" ~ "hs",
+    TRUE ~ "other"
+  )) %>%
+  mutate(graft_group2 = factor(graft_group2, levels = c("hs", "other"))) %>%
+  filter(!is.na(measure_2)) 
+
+
+slowhs_graft <- hs_graft %>%
+  filter(measure_2 == "Slow Isokinetic") %>%
+  filter(!(cohort == "Lee 2019" & measure == "hs isk con 60 - deep"),
+         !(cohort == "Kim 2011" & measure == "hs isk con 90 hyperflex"),
+         !(cohort == "Siney 2010" & measure == "hs isk con 90"),
+         !(cohort == "Li 2022" & measure == "hs isk con 30"))
+
+fasths_graft <- hs_graft %>%
+  filter(measure_2 == "Fast Isokinetic") %>%
+  filter(!(cohort == "Drocco 2017" & measure == "hs isk con 240"),
+         !(cohort == "Laudner 2015" & measure == "hs isk con 300"))
+         
+isohs_graft <- hs_graft %>%
+  filter(measure_2 == "Isometric") %>%
+  filter(!(cohort == "Hu 2020" & measure == "hs mvic 30 hhd"),
+         !(cohort == "Hu 2020" & measure == "hs mvic 60 hhd"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 30"),
+         !(cohort == "Ardern 2010" & measure == "hs mvic 105"))
+
+```
+
+# Quadriceps
+
+## Slow Isokinetic
+
+```{r slowquad, R.options=list(width = 150)}
+
+slowquad_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = slowquad_graft)
+
+# Model
+# Controlling spline positions for easy of plot so can be sure consistent. Spline locations are based on Harrell 
+
+slowquad_graft_mv <- rma.mv(yi, slowquad_graftV, 
+                     mods = ~graft_group2*rcs(timepoint_mean,c(3, 6, 12, 51)), 
+                     data = slowquad_graft, 
+                     random = list(~ timepoint_mean|cohort),
+                     struct = "CAR")
+
+broom::tidy(slowquad_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(slowquad_graft_mv)
+```
+
+
+## Fast Isokinetic
+
+```{r fastquad}
+
+fastquad_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = fastquad_graft)
+
+# Model
+# Controlling spline positions for easy of plot so can be sure consistent. Spline locations are based on Harrell 
+
+fastquad_graft_mv <- rma.mv(yi, fastquad_graftV, 
+                            mods = ~graft_group2*rcs(timepoint_mean,c(3, 6, 12, 49)), 
+                            data = fastquad_graft, 
+                            random = list(~ timepoint_mean|cohort),
+                            struct = "CAR")
+
+broom::tidy(fastquad_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+```
+
+
+```{r fastquad no int}
+# No major interaction so removing interaction term and refitting
+
+fastquad_graft_mv <- rma.mv(yi, fastquad_graftV, 
+                            mods = ~graft_group2 + rcs(timepoint_mean,c(3, 6, 12, 49)), 
+                            data = fastquad_graft, 
+                            random = list(~ timepoint_mean|cohort),
+                            struct = "CAR")
+
+broom::tidy(fastquad_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(fastquad_graft_mv)
+```
+
+## Isometric
+
+```{r isoquad}
+
+isoquad_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = isoquad_graft)
+
+# Model
+# Log timepoint best fit here, as per main analysis
+
+isoquad_graft_mv <- rma.mv(yi, isoquad_graftV, 
+                            mods = ~graft_group2*log(timepoint_mean), 
+                            data = isoquad_graft, 
+                            random = list(~ timepoint_mean|cohort),
+                            struct = "CAR")
+
+
+broom::tidy(isoquad_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(isoquad_graft_mv)
+```
+
+# Hamstrings
+
+## Slow Isokinetic
+
+```{r slowhs}
+
+slowhs_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = slowhs_graft)
+
+# Model
+# Controlling spline positions for easy of plot so can be sure consistent. Spline locations are based on Harrell 
+
+slowhs_graft_mv <- rma.mv(yi, slowhs_graftV, 
+                            mods = ~graft_group2*rcs(timepoint_mean, c(3,6,12,57)), 
+                            data = slowhs_graft, 
+                            random = list(~ timepoint_mean|cohort),
+                            struct = "CAR",
+                            control=list(rel.tol=1e-8)) # issue with optimizer?, hence using this 
+
+broom::tidy(slowhs_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+```
+
+```{r slowhs noint}
+
+# No significant interaction so removing interaction term
+slowhs_graft_mv <- rma.mv(yi, slowhs_graftV, 
+                            mods = ~graft_group2 + rcs(timepoint_mean, c(3,6,12,57)), 
+                            data = slowhs_graft, 
+                            random = list(~ timepoint_mean|cohort),
+                            struct = "CAR",
+                            control=list(rel.tol=1e-8)) # issue with optimizer?, hence using this 
+
+broom::tidy(slowhs_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(slowhs_graft_mv, graft = "hs")
+
+```
+
+
+## Fast Isokinetic
+
+```{r fasths}
+
+fasths_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = fasths_graft)
+
+# Model
+# Controlling spline positions for easy of plot so can be sure consistent. Spline locations are based on Harrell 
+
+fasths_graft_mv <- rma.mv(yi, fasths_graftV, 
+                          mods = ~graft_group2*rcs(timepoint_mean, c(3,6,12,41)), 
+                          data = fasths_graft, 
+                          random = list(~ timepoint_mean|cohort),
+                          struct = "CAR")
+ 
+
+broom::tidy(fasths_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(fasths_graft_mv, graft = "hs")
+```
+
+## Isometric
+
+```{r isohs}
+
+isohs_graftV <- vcalc(vi = vi,
+                 cluster = cohort,
+                 time1 = timepoint_mean,
+                subgroup = graft_group2,
+                 phi = 0.85,
+                 checkpd = TRUE,
+                 data = isohs_graft)
+
+# Model
+# Log timepoint best fit for isometric
+
+isohs_graft_mv <- rma.mv(yi, isohs_graftV, 
+                         mods = ~graft_group2*log(timepoint_mean), 
+                         data = isohs_graft, 
+                         random = list(~ timepoint_mean|cohort),
+                         struct = "CAR")
+ 
+
+broom::tidy(isohs_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+```
+
+```{r isohs noint}
+
+# No major interaction, so removing term
+
+isohs_graft_mv <- rma.mv(yi, isohs_graftV, 
+                         mods = ~graft_group2 + log(timepoint_mean), 
+                         data = isohs_graft, 
+                         random = list(~ timepoint_mean|cohort),
+                         struct = "CAR")
+ 
+
+broom::tidy(isohs_graft_mv, conf.int = TRUE) %>% kbl(digits = 3) %>%  kable_styling(position = "left", full_width = FALSE)
+
+graft_plot(isohs_graft_mv, graft = "hs")
+```
